@@ -494,11 +494,11 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 body.dark .neg-card,body.dark .neg-form-card{background:var(--surface);}
 
 /* ── Bolinha de comentários (Growth) ── */
-#comment-alert-btn{position:fixed;bottom:28px;right:28px;min-width:52px;height:52px;border-radius:26px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:.72rem;font-weight:800;display:none;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.22);z-index:200;transition:transform .15s,box-shadow .15s,background .2s;gap:1px;padding:0 14px;}
-#comment-alert-btn:hover{transform:scale(1.07);box-shadow:0 6px 28px rgba(0,0,0,.28);}
+#comment-alert-btn{position:fixed;bottom:28px;right:28px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:1.5rem;display:none;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.22);z-index:200;transition:transform .15s,box-shadow .15s,background .2s;padding:0;}
+#comment-alert-btn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,0,0,.28);}
 #comment-alert-btn.highlight-on{background:var(--push);}
-#comment-alert-count{font-size:1rem;font-weight:900;line-height:1;}
-#comment-alert-label{font-size:.6rem;font-weight:700;opacity:.85;letter-spacing:.03em;}
+#comment-alert-count{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:#e03e3e;color:#fff;font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--surface);line-height:1;}
+#comment-alert-label{display:none;}
 .wcard.comment-highlight{box-shadow:0 0 0 2.5px var(--accent),var(--shadow)!important;z-index:1;}
 body.comment-highlight-mode .wcard:not(.comment-highlight){opacity:.3;pointer-events:none;}
 body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
@@ -2109,8 +2109,8 @@ function toggleCommentHighlight(){
 </script>
 
 
-<button id="comment-alert-btn" onclick="toggleCommentHighlight()" title="Ver cards com comentários">
+<button id="comment-alert-btn" onclick="toggleCommentHighlight()" title="Ver cards com comentários" style="position:fixed">
+  💬
   <span id="comment-alert-count">0</span>
-  <span id="comment-alert-label">💬 comentários</span>
 </button>
 </body></html>
