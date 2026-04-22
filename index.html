@@ -296,10 +296,12 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .wcard-ticket.low {background:rgba(26,122,74,.12);color:var(--accent);}
 .wcard-del{position:absolute;top:6px;right:6px;width:16px;height:16px;border:none;background:rgba(0,0,0,.07);border-radius:3px;cursor:pointer;font-size:.6rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;color:var(--text-muted);}
 .wcard:hover .wcard-del{opacity:1;}
-.wcard-obs{width:100%;font-size:.67rem;color:var(--text-muted);background:transparent;border:none;border-top:1px dashed transparent;border-radius:4px;padding:2px 3px;resize:none;font-family:inherit;outline:none;margin-top:4px;line-height:1.4;overflow:hidden;min-height:18px;cursor:text;transition:background .12s,border-color .12s;}
-.wcard-obs::placeholder{opacity:.45;font-style:italic;}
-.wcard-obs:hover{background:rgba(0,0,0,.04);border-top-color:var(--border);}
-.wcard-obs:focus{background:rgba(0,0,0,.05);border:1px solid var(--border);color:var(--text);}
+.wcard-obs-text{font-size:.67rem;color:var(--text-muted);margin-top:3px;font-style:italic;line-height:1.4;word-break:break-word;}
+.wcard.disparo-feito{background:rgba(33,194,94,.18)!important;border-left-color:#21C25E!important;}
+.wcard.disparo-feito .wcard-canal{color:#21C25E!important;}
+.wcard-feito-btn{width:16px;height:16px;border:none;background:transparent;border-radius:3px;cursor:pointer;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s,background .12s;color:var(--text-muted);padding:0;}
+.wcard:hover .wcard-feito-btn{opacity:1;}
+.wcard-feito-btn.feito-on{opacity:1;color:#21C25E;background:rgba(33,194,94,.15);}
 .wcard-briefing-btn{width:16px;height:16px;border:none;background:transparent;border-radius:3px;cursor:pointer;font-size:.68rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;color:var(--text-muted);padding:0;}
 .wcard:hover .wcard-briefing-btn{opacity:1;}
 .wcard-briefing-btn.briefing-on{opacity:1;color:var(--accent);background:var(--accent-soft);}
@@ -705,6 +707,11 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
           <input type="radio"><span>Low Ticket</span>
         </div>
       </div>
+    </div>
+
+    <div class="field">
+      <label>Observação</label>
+      <textarea class="field-input" id="obs-input" rows="2" placeholder="Anotações, links, detalhes do disparo..." style="resize:vertical"></textarea>
     </div>
 
     <div class="modal-actions">
@@ -1159,11 +1166,11 @@ function renderWeekCards(key){
   (state.disparos[key]||[]).forEach((d,idx)=>{
     const card=document.createElement('div');
     const canalKey=d.canal.replace(/[^a-zA-Z]/g,'');
-    card.className=`wcard canal-${canalKey}${d.briefingAberto?' briefing-aberto':''}`;
+    card.className=`wcard canal-${canalKey}${d.briefingAberto?' briefing-aberto':''}${d.disparoFeito?' disparo-feito':''}`;
     card.setAttribute('draggable','true');
     card.dataset.srcDate=key;
     card.dataset.srcIdx=idx;
-    card.onclick=(e)=>{if(!e.target.classList.contains('wcard-del')&&!e.target.classList.contains('wcard-briefing-btn'))openModal(key,idx);};
+    card.onclick=(e)=>{if(!e.target.classList.contains('wcard-del')&&!e.target.classList.contains('wcard-briefing-btn')&&!e.target.classList.contains('wcard-feito-btn'))openModal(key,idx);};
     // ordenar por hora se disponível
     const pub=(Array.isArray(d.publico)?d.publico:[d.publico]).join(', ');
     const nome=d.produto||d.temaLivre||'—';
@@ -1173,11 +1180,14 @@ function renderWeekCards(key){
       <div class="wcard-produto">${nome}</div>
       ${d.mecanica?`<div class="wcard-mecanica">${d.mecanica}</div>`:''}
       <div class="wcard-publico">${pub}</div>
-      <textarea class="wcard-obs" rows="1" placeholder="+ Observação..." onclick="event.stopPropagation()" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onblur="saveObs('${key}',${idx},this.value)">${d.obs||''}</textarea>
+      ${d.obs?`<div class="wcard-obs-text">📝 ${d.obs}</div>`:''}
       <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
       <div class="wcard-footer">
         <span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>
-        <button class="wcard-briefing-btn${d.briefingAberto?' briefing-on':''}" onclick="toggleBriefing('${key}',${idx})" title="${d.briefingAberto?'Briefing aberto — clique para desmarcar':'Marcar briefing como aberto'}">${d.briefingAberto?'📬':'📭'}</button>
+        <div style="display:flex;align-items:center;gap:3px">
+          <button class="wcard-feito-btn${d.disparoFeito?' feito-on':''}" onclick="toggleDisparoFeito('${key}',${idx})" title="${d.disparoFeito?'Disparo feito — clique para desmarcar':'Marcar disparo como feito'}">✓</button>
+          <button class="wcard-briefing-btn${d.briefingAberto?' briefing-on':''}" onclick="toggleBriefing('${key}',${idx})" title="${d.briefingAberto?'Briefing aberto — clique para desmarcar':'Marcar briefing como aberto'}">${d.briefingAberto?'📬':'📭'}</button>
+        </div>
       </div>
     `;
     // drag events
@@ -1206,6 +1216,7 @@ function openModal(date,index){
   document.getElementById('tema-livre-input').value='';
   document.getElementById('mecanica-custom').value='';
   document.getElementById('publico-custom-input').value='';
+  document.getElementById('obs-input').value='';
   document.querySelectorAll('.mecanica-chip').forEach(c=>c.classList.remove('selected'));
 
   if(index!==null&&state.disparos[date]?.[index]){
@@ -1214,6 +1225,7 @@ function openModal(date,index){
     modalState.selectedCanal=d.canal;modalState.selectedTicket=d.ticket;
     modalState.selectedMecanica=d.mecanica||null;
     if(d.hora) document.getElementById('hora-input').value=d.hora;
+    if(d.obs) document.getElementById('obs-input').value=d.obs;
     // produto: define o modo correto ANTES de preencher
     if(d.produtoId){
       setProdutoMode('catalogo');
@@ -1312,7 +1324,8 @@ function saveDisparo(){
     temaLivre:produtoMode==='livre'?tl:null,
     mecanica,
     briefingAberto:(modalState.editIndex!==null&&state.disparos[modalState.editDate]?.[modalState.editIndex]?.briefingAberto)||false,
-    obs:(modalState.editIndex!==null?state.disparos[modalState.editDate]?.[modalState.editIndex]?.obs:null)||null,
+    disparoFeito:(modalState.editIndex!==null&&state.disparos[modalState.editDate]?.[modalState.editIndex]?.disparoFeito)||false,
+    obs:document.getElementById('obs-input').value.trim()||null,
   };
 
   if(!state.disparos[modalState.editDate])state.disparos[modalState.editDate]=[];
@@ -1331,6 +1344,13 @@ function deleteDisparo(date,index){
   if(document.getElementById('page-monthly').classList.contains('active'))renderMonthGrid();
   if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();
   showToast('Disparo removido.');
+  fbSave();
+}
+
+function toggleDisparoFeito(date,idx){
+  if(!state.disparos[date]?.[idx])return;
+  state.disparos[date][idx].disparoFeito=!state.disparos[date][idx].disparoFeito;
+  renderWeekCards(date);
   fbSave();
 }
 
