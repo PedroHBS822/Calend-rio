@@ -1876,7 +1876,7 @@ function openCommentModal(date,idx){
   const list=document.getElementById('comment-list');
   list.innerHTML=comments.length===0
     ?'<div style="text-align:center;color:var(--text-light);padding:20px;font-size:.84rem">Nenhum comentário ainda.</div>'
-    :comments.map(c=>`<div class="comment-item"><div class="comment-item-header"><span class="comment-item-autor">${c.autor}</span><span class="comment-item-ts">${new Date(c.ts).toLocaleString('pt-BR')}</span></div><div class="comment-item-texto">${c.texto}</div></div>`).join('');
+    :comments.map((c,ci)=>`<div class="comment-item"><div class="comment-item-header"><span class="comment-item-autor">${c.autor}</span><span class="comment-item-ts">${new Date(c.ts).toLocaleString('pt-BR')}</span>${!IS_COMERCIAL?`<button onclick="deleteComment('${date}',${idx},${ci})" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-light);font-size:.75rem;padding:0" title="Apagar comentário">✕</button>`:''}</div><div class="comment-item-texto">${c.texto}</div></div>`).join('');
   document.getElementById('comment-autor').value='';
   document.getElementById('comment-texto').value='';
   document.getElementById('comment-modal-overlay').classList.add('open');
@@ -1977,8 +1977,25 @@ function buildNegList(){
         <button class="neg-status-btn" onclick="changeNegStatus('${n.id}','analise')">Em análise</button>
         <button class="neg-status-btn" onclick="changeNegStatus('${n.id}','aprovado')">Aprovado</button>
         <button class="neg-status-btn" onclick="changeNegStatus('${n.id}','recusado')">Recusado</button>
+        <button class="neg-status-btn" onclick="deleteNegociacao('${n.id}')" style="margin-left:auto;color:var(--restrict);border-color:rgba(224,62,62,.3)">🗑 Apagar</button>
       </div>`:''}
     </div>`).join('');
+}
+
+function deleteComment(date,idx,ci){
+  const key=date+'|'+idx;
+  if(!state.comentarios[key])return;
+  state.comentarios[key].splice(ci,1);
+  if(state.comentarios[key].length===0)delete state.comentarios[key];
+  fbSave();
+  openCommentModal(date,idx);
+  if(document.getElementById('page-weekly').classList.contains('active'))renderWeekCards(date);
+}
+
+function deleteNegociacao(id){
+  state.negociacoes=state.negociacoes.filter(n=>n.id!==id);
+  fbSave();
+  buildNegList();
 }
 
 function buildNegociacaoPage(){
