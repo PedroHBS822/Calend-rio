@@ -296,6 +296,14 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .wcard-ticket.low {background:rgba(26,122,74,.12);color:var(--accent);}
 .wcard-del{width:16px;height:16px;border:none;background:rgba(0,0,0,.07);border-radius:3px;cursor:pointer;font-size:.6rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;color:var(--text-muted);}
 .wcard:hover .wcard-del{opacity:1;}
+.wcard-briefing-btn{width:16px;height:16px;border:none;background:transparent;border-radius:3px;cursor:pointer;font-size:.68rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;color:var(--text-muted);padding:0;}
+.wcard:hover .wcard-briefing-btn{opacity:1;}
+.wcard-briefing-btn.briefing-on{opacity:1;color:var(--accent);background:var(--accent-soft);}
+.wcard.briefing-aberto.canal-Push    {background:rgba(108,99,255,.24);}
+.wcard.briefing-aberto.canal-Email   {background:rgba(0,166,126,.24);}
+.wcard.briefing-aberto.canal-WhatsApp{background:rgba(26,173,82,.24);}
+.wcard.briefing-aberto.canal-InApp   {background:rgba(230,138,0,.24);}
+.wcard.briefing-aberto.canal-DM      {background:rgba(0,136,204,.24);}
 .wbtn-add{margin-top:auto;padding:7px;background:transparent;border:1.5px dashed var(--border);border-radius:8px;color:var(--text-light);cursor:pointer;font-size:.75rem;font-weight:600;width:100%;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px;}
 .wbtn-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
 
@@ -677,6 +685,10 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
     <div class="field">
       <label>Público <span style="color:var(--accent);font-size:.65rem;font-weight:600">(múltipla seleção)</span></label>
       <div class="publico-grid" id="publico-grid"></div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <input type="text" class="field-input" id="publico-custom-input" placeholder="Outro público..." style="flex:1" onkeydown="if(event.key==='Enter'){addPublicoCustom();event.preventDefault();}">
+        <button class="btn btn-secondary" onclick="addPublicoCustom()" style="padding:6px 12px;font-size:.78rem;white-space:nowrap">+ Adicionar</button>
+      </div>
     </div>
 
     <div class="field">
@@ -1143,11 +1155,11 @@ function renderWeekCards(key){
   (state.disparos[key]||[]).forEach((d,idx)=>{
     const card=document.createElement('div');
     const canalKey=d.canal.replace(/[^a-zA-Z]/g,'');
-    card.className=`wcard canal-${canalKey}`;
+    card.className=`wcard canal-${canalKey}${d.briefingAberto?' briefing-aberto':''}`;
     card.setAttribute('draggable','true');
     card.dataset.srcDate=key;
     card.dataset.srcIdx=idx;
-    card.onclick=(e)=>{if(!e.target.classList.contains('wcard-del'))openModal(key,idx);};
+    card.onclick=(e)=>{if(!e.target.classList.contains('wcard-del')&&!e.target.classList.contains('wcard-briefing-btn'))openModal(key,idx);};
     // ordenar por hora se disponível
     const pub=(Array.isArray(d.publico)?d.publico:[d.publico]).join(', ');
     const nome=d.produto||d.temaLivre||'—';
@@ -1159,7 +1171,10 @@ function renderWeekCards(key){
       <div class="wcard-publico">${pub}</div>
       <div class="wcard-footer">
         <span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>
-        <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
+        <div style="display:flex;align-items:center;gap:3px">
+          <button class="wcard-briefing-btn${d.briefingAberto?' briefing-on':''}" onclick="toggleBriefing('${key}',${idx})" title="${d.briefingAberto?'Briefing aberto — clique para desmarcar':'Marcar briefing como aberto'}">${d.briefingAberto?'📬':'📭'}</button>
+          <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
+        </div>
       </div>
     `;
     // drag events
@@ -1187,6 +1202,7 @@ function openModal(date,index){
   document.getElementById('hora-input').value='';
   document.getElementById('tema-livre-input').value='';
   document.getElementById('mecanica-custom').value='';
+  document.getElementById('publico-custom-input').value='';
   document.querySelectorAll('.mecanica-chip').forEach(c=>c.classList.remove('selected'));
 
   if(index!==null&&state.disparos[date]?.[index]){
@@ -1292,6 +1308,7 @@ function saveDisparo(){
     produto:produtoMode==='catalogo'&&modalState.selectedProduto?modalState.selectedProduto.nome:null,
     temaLivre:produtoMode==='livre'?tl:null,
     mecanica,
+    briefingAberto:(modalState.editIndex!==null&&state.disparos[modalState.editDate]?.[modalState.editIndex]?.briefingAberto)||false,
   };
 
   if(!state.disparos[modalState.editDate])state.disparos[modalState.editDate]=[];
@@ -1311,6 +1328,27 @@ function deleteDisparo(date,index){
   if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();
   showToast('Disparo removido.');
   fbSave();
+}
+
+function toggleBriefing(date,idx){
+  if(!state.disparos[date]?.[idx])return;
+  state.disparos[date][idx].briefingAberto=!state.disparos[date][idx].briefingAberto;
+  renderWeekCards(date);
+  fbSave();
+}
+
+function addPublicoCustom(){
+  const input=document.getElementById('publico-custom-input');
+  const val=input.value.trim();if(!val)return;
+  if(modalState.selectedPublicos.includes(val)){showToast('Público já selecionado.');return;}
+  modalState.selectedPublicos.push(val);
+  input.value='';
+  const pg=document.getElementById('publico-grid');
+  const item=document.createElement('div');
+  item.className='check-item selected';
+  item.innerHTML=`<div class="check-box">✓</div><span class="check-label">${val}</span>`;
+  item.onclick=()=>togglePublico(val,item);
+  pg.appendChild(item);
 }
 
 // ════ DRAG & DROP ════
