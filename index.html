@@ -296,6 +296,10 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .wcard-ticket.low {background:rgba(26,122,74,.12);color:var(--accent);}
 .wcard-del{position:absolute;top:6px;right:6px;width:16px;height:16px;border:none;background:rgba(0,0,0,.07);border-radius:3px;cursor:pointer;font-size:.6rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;color:var(--text-muted);}
 .wcard:hover .wcard-del{opacity:1;}
+.wcard-obs{width:100%;font-size:.67rem;color:var(--text-muted);background:transparent;border:none;border-top:1px dashed transparent;border-radius:4px;padding:2px 3px;resize:none;font-family:inherit;outline:none;margin-top:4px;line-height:1.4;overflow:hidden;min-height:18px;cursor:text;transition:background .12s,border-color .12s;}
+.wcard-obs::placeholder{opacity:.45;font-style:italic;}
+.wcard-obs:hover{background:rgba(0,0,0,.04);border-top-color:var(--border);}
+.wcard-obs:focus{background:rgba(0,0,0,.05);border:1px solid var(--border);color:var(--text);}
 .wcard-briefing-btn{width:16px;height:16px;border:none;background:transparent;border-radius:3px;cursor:pointer;font-size:.68rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;color:var(--text-muted);padding:0;}
 .wcard:hover .wcard-briefing-btn{opacity:1;}
 .wcard-briefing-btn.briefing-on{opacity:1;color:var(--accent);background:var(--accent-soft);}
@@ -1169,6 +1173,7 @@ function renderWeekCards(key){
       <div class="wcard-produto">${nome}</div>
       ${d.mecanica?`<div class="wcard-mecanica">${d.mecanica}</div>`:''}
       <div class="wcard-publico">${pub}</div>
+      <textarea class="wcard-obs" rows="1" placeholder="+ Observação..." onclick="event.stopPropagation()" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onblur="saveObs('${key}',${idx},this.value)">${d.obs||''}</textarea>
       <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
       <div class="wcard-footer">
         <span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>
@@ -1307,6 +1312,7 @@ function saveDisparo(){
     temaLivre:produtoMode==='livre'?tl:null,
     mecanica,
     briefingAberto:(modalState.editIndex!==null&&state.disparos[modalState.editDate]?.[modalState.editIndex]?.briefingAberto)||false,
+    obs:(modalState.editIndex!==null?state.disparos[modalState.editDate]?.[modalState.editIndex]?.obs:null)||null,
   };
 
   if(!state.disparos[modalState.editDate])state.disparos[modalState.editDate]=[];
@@ -1332,6 +1338,12 @@ function toggleBriefing(date,idx){
   if(!state.disparos[date]?.[idx])return;
   state.disparos[date][idx].briefingAberto=!state.disparos[date][idx].briefingAberto;
   renderWeekCards(date);
+  fbSave();
+}
+
+function saveObs(date,idx,val){
+  if(!state.disparos[date]?.[idx])return;
+  state.disparos[date][idx].obs=val.trim()||null;
   fbSave();
 }
 
