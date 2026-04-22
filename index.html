@@ -446,7 +446,8 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .wcard-comment-btn.has-comments{opacity:1;color:var(--accent);}
 .comercial-mode .wcard-comment-btn{right:6px;}
 .comercial-mode .wcard-del,.comercial-mode .wcard-briefing-btn,.comercial-mode .wcard-feito-btn,.comercial-mode .wbtn-add,.comercial-mode .mcell-add{display:none!important;}
-.comercial-mode .wcard{cursor:default;}
+.comercial-mode .wcard{cursor:pointer;}
+.comercial-mode .wcard-comment-btn{display:none!important;}
 
 /* ── Banner modo comercial ── */
 .comercial-banner{background:rgba(108,99,255,.08);border-bottom:2px solid rgba(108,99,255,.2);padding:9px 28px;font-size:.8rem;color:var(--push);font-weight:700;display:none;letter-spacing:.01em;}
@@ -1293,7 +1294,7 @@ function renderWeekCards(key){
     card.dataset.srcDate=key;
     card.dataset.srcIdx=idx;
     card.onclick=(e)=>{
-      if(IS_COMERCIAL)return;
+      if(IS_COMERCIAL){openCommentModal(key,idx);return;}
       if(!e.target.classList.contains('wcard-del')&&!e.target.classList.contains('wcard-briefing-btn')&&!e.target.classList.contains('wcard-feito-btn')&&!e.target.classList.contains('wcard-comment-btn'))openModal(key,idx);
     };
     // ordenar por hora se disponível
