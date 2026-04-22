@@ -37,7 +37,9 @@ const firebaseConfig = {
           savedAt:    new Date().toISOString(),
           disparos:   state.disparos,
           campaigns:  state.campaigns,
-          motesCustom: state.motesCustom
+          motesCustom: state.motesCustom,
+          comentarios: state.comentarios,
+          negociacoes: state.negociacoes
         });
       } catch(e) {
         console.error("Firebase save error:", e);
@@ -438,6 +440,47 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .json-textarea{flex:1;min-height:300px;overflow-y:auto;background:#f8f9ff;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'Menlo','Consolas',monospace;font-size:.75rem;color:var(--text);line-height:1.6;resize:none;outline:none;}
 .json-actions{display:flex;gap:8px;margin-top:14px;}
 
+/* ── Comentários nos cards ── */
+.wcard-comment-btn{position:absolute;top:6px;right:26px;background:transparent;border:none;cursor:pointer;font-size:.68rem;padding:0;display:flex;align-items:center;gap:2px;color:var(--text-muted);opacity:0;transition:opacity .15s;font-weight:700;}
+.wcard:hover .wcard-comment-btn{opacity:1;}
+.wcard-comment-btn.has-comments{opacity:1;color:var(--accent);}
+.comercial-mode .wcard-comment-btn{right:6px;}
+.comercial-mode .wcard-del,.comercial-mode .wcard-briefing-btn,.comercial-mode .wcard-feito-btn,.comercial-mode .wbtn-add,.comercial-mode .mcell-add{display:none!important;}
+.comercial-mode .wcard{cursor:default;}
+
+/* ── Banner modo comercial ── */
+.comercial-banner{background:rgba(108,99,255,.08);border-bottom:2px solid rgba(108,99,255,.2);padding:9px 28px;font-size:.8rem;color:var(--push);font-weight:700;display:none;letter-spacing:.01em;}
+.comercial-banner.show{display:flex;align-items:center;gap:8px;}
+
+/* ── Negociação ── */
+.neg-form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;max-width:620px;box-shadow:var(--shadow-sm);margin-bottom:32px;}
+.neg-form-card h3{font-size:1rem;font-weight:800;margin-bottom:4px;}
+.neg-form-card p{font-size:.82rem;color:var(--text-muted);margin-bottom:20px;}
+.neg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;box-shadow:var(--shadow-sm);}
+.neg-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;}
+.neg-card-nome{font-size:.88rem;font-weight:700;color:var(--text);}
+.neg-card-ts{font-size:.7rem;color:var(--text-light);margin-top:2px;}
+.neg-card-descricao{font-size:.84rem;color:var(--text);line-height:1.5;margin-bottom:10px;}
+.neg-card-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.neg-meta-chip{font-size:.72rem;padding:3px 9px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-weight:600;}
+.neg-status-badge{font-size:.72rem;font-weight:700;padding:4px 11px;border-radius:20px;letter-spacing:.03em;white-space:nowrap;}
+.neg-status-badge.pendente{background:rgba(230,138,0,.12);color:#e68a00;}
+.neg-status-badge.analise{background:rgba(108,99,255,.12);color:var(--push);}
+.neg-status-badge.aprovado{background:rgba(33,194,94,.14);color:#21C25E;}
+.neg-status-badge.recusado{background:rgba(224,62,62,.1);color:var(--restrict);}
+.neg-status-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.neg-status-btn{font-size:.7rem;padding:3px 9px;border-radius:6px;border:1.5px solid var(--border);background:transparent;cursor:pointer;color:var(--text-muted);font-weight:600;transition:all .15s;}
+.neg-status-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+
+/* ── Modal comentários ── */
+.comment-list{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.comment-item{background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border);}
+.comment-item-header{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.comment-item-autor{font-size:.75rem;font-weight:700;color:var(--text);}
+.comment-item-ts{font-size:.68rem;color:var(--text-light);}
+.comment-item-texto{font-size:.82rem;color:var(--text);line-height:1.5;}
+body.dark .neg-card,body.dark .neg-form-card{background:var(--surface);}
+
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--text);border-radius:10px;padding:11px 18px;font-size:.84rem;color:#fff;font-weight:500;box-shadow:var(--shadow-lg);transform:translateY(60px);opacity:0;transition:all .3s;z-index:300;}
 .toast.show{transform:translateY(0);opacity:1;}
@@ -450,7 +493,8 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
   <div class="app-logo">E2E CRM</div>
   <button class="tab-btn active" onclick="switchTab(&#39;monthly&#39;,this)">🗓 Mensal</button>
   <button class="tab-btn" onclick="switchTab(&#39;weekly&#39;,this)">📅 Semanal</button>
-  <button class="tab-btn" onclick="switchTab(&#39;consolidation&#39;,this)">📊 Consolidação</button>
+  <button class="tab-btn tab-consolidation" onclick="switchTab(&#39;consolidation&#39;,this)">📊 Consolidação</button>
+  <button class="tab-btn" onclick="switchTab(&#39;negociacao&#39;,this)">🤝 Negociação</button>
   <button class="btn-darkmode" id="btn-darkmode" onclick="toggleDarkMode()" title="Alternar modo noturno">🌙</button>
 </div>
 
@@ -472,6 +516,8 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
   <button class="btn-collab danger" onclick="confirmClear()">🗑 Limpar</button>
   <div class="collab-status" id="collab-status">Aguardando conexão...</div>
 </div>
+
+<div class="comercial-banner" id="comercial-banner">👁 Modo Visualização — Comercial &nbsp;·&nbsp; Você pode comentar nos disparos e solicitar novos na aba Negociação</div>
 
 <!-- ═══ MENSAL ═══ -->
 <div class="page active" id="page-monthly">
@@ -632,6 +678,79 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
   <div class="breakdown-grid" id="canal-breakdown"></div>
   <div class="section-title">Públicos mais acionados</div>
   <div class="pt-table" id="publico-breakdown"></div>
+</div>
+
+<!-- ═══ NEGOCIAÇÃO ═══ -->
+<div class="page" id="page-negociacao">
+  <!-- Formulário: só no modo comercial -->
+  <div id="neg-form-section" style="display:none">
+    <div class="neg-form-card">
+      <h3>📋 Solicitar Disparo</h3>
+      <p>Preencha os dados abaixo e o time de Growth vai analisar sua solicitação.</p>
+      <div class="field">
+        <label>Seu nome / Equipe <span style="color:var(--restrict)">*</span></label>
+        <input type="text" class="field-input" id="neg-nome" placeholder="Ex: João — Comercial Sul">
+      </div>
+      <div class="field">
+        <label>Canal preferido</label>
+        <div class="canal-select-wrapper" id="neg-canal-opts">
+          <div class="canal-opt" data-canal="Push" onclick="selectNegCanal(this)">📲 Push</div>
+          <div class="canal-opt" data-canal="E-mail" onclick="selectNegCanal(this)">✉️ E-mail</div>
+          <div class="canal-opt" data-canal="WhatsApp" onclick="selectNegCanal(this)">💬 WhatsApp</div>
+          <div class="canal-opt" data-canal="In-App" onclick="selectNegCanal(this)">📱 In-App</div>
+          <div class="canal-opt" data-canal="DM" onclick="selectNegCanal(this)">💙 DM</div>
+          <div class="canal-opt" data-canal="Sem preferência" onclick="selectNegCanal(this)">🔀 Sem preferência</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Data pretendida</label>
+        <input type="date" class="field-input" id="neg-data" style="width:200px">
+      </div>
+      <div class="field">
+        <label>Produto / Tema</label>
+        <input type="text" class="field-input" id="neg-produto" placeholder="Ex: Tênis Nike Air Max — coleção verão">
+      </div>
+      <div class="field">
+        <label>Descrição da solicitação <span style="color:var(--restrict)">*</span></label>
+        <textarea class="field-input" id="neg-descricao" rows="3" placeholder="Explique o objetivo, público-alvo, qualquer detalhe relevante..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitNegociacao()" style="margin-top:4px">Enviar Solicitação</button>
+    </div>
+  </div>
+
+  <!-- Lista de solicitações -->
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:1.1rem;font-weight:800" id="neg-list-title">Solicitações do Comercial</div>
+        <div style="font-size:.82rem;color:var(--text-muted);margin-top:2px" id="neg-list-sub"></div>
+      </div>
+      <select class="field-input" id="neg-filter" onchange="buildNegList()" style="width:160px;padding:6px 10px">
+        <option value="">Todas</option>
+        <option value="pendente">Pendente</option>
+        <option value="analise">Em análise</option>
+        <option value="aprovado">Aprovado</option>
+        <option value="recusado">Recusado</option>
+      </select>
+    </div>
+    <div id="neg-list"></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL COMENTÁRIOS ═══ -->
+<div class="modal-overlay" id="comment-modal-overlay">
+  <div class="modal" style="max-width:480px">
+    <h2 id="comment-modal-title">Comentários</h2>
+    <div class="comment-list" id="comment-list"></div>
+    <div class="field" style="margin-bottom:8px">
+      <input type="text" class="field-input" id="comment-autor" placeholder="Seu nome..." style="margin-bottom:8px">
+      <textarea class="field-input" id="comment-texto" rows="2" placeholder="Escreva seu comentário..." style="resize:vertical"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeCommentModal()">Fechar</button>
+      <button class="btn btn-primary" onclick="addComment()">Comentar</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ MODAL DISPARO ═══ -->
@@ -830,6 +949,8 @@ let state = {
   disparos: {},       // 'YYYY-MM-DD': [{canal,produto,produtoId,temaLivre,mecanica,publico,ticket}]
   campaigns: [],      // [{id,name,color,days:[]}]  — days = ['YYYY-MM-DD',...]
   motesCustom: {},    // dow(0-6) -> texto customizado (só dias não-quinta)
+  comentarios: {},    // 'YYYY-MM-DD|idx': [{autor,texto,ts}]
+  negociacoes: [],    // [{id,nome,canal,data,produto,descricao,ts,status}]
 };
 let weekOffset=0, monthViewOffset=0, consolOffset=0;
 let modalState = {editDate:null,editIndex:null,selectedPublicos:[],selectedCanal:null,selectedTicket:null,selectedProduto:null,selectedMecanica:null,hora:null};
@@ -919,6 +1040,7 @@ function switchTab(tab,btn){
   if(tab==='monthly') renderMonthGrid();
   if(tab==='weekly') buildWeekCalendar();
   if(tab==='consolidation') renderConsolidation();
+  if(tab==='negociacao') buildNegociacaoPage();
 }
 
 // ════ MONTHLY GRID ════
@@ -1170,10 +1292,15 @@ function renderWeekCards(key){
     card.setAttribute('draggable','true');
     card.dataset.srcDate=key;
     card.dataset.srcIdx=idx;
-    card.onclick=(e)=>{if(!e.target.classList.contains('wcard-del')&&!e.target.classList.contains('wcard-briefing-btn')&&!e.target.classList.contains('wcard-feito-btn'))openModal(key,idx);};
+    card.onclick=(e)=>{
+      if(IS_COMERCIAL)return;
+      if(!e.target.classList.contains('wcard-del')&&!e.target.classList.contains('wcard-briefing-btn')&&!e.target.classList.contains('wcard-feito-btn')&&!e.target.classList.contains('wcard-comment-btn'))openModal(key,idx);
+    };
     // ordenar por hora se disponível
     const pub=(Array.isArray(d.publico)?d.publico:[d.publico]).join(', ');
     const nome=d.produto||d.temaLivre||'—';
+    const commentKey=key+'|'+idx;
+    const commentCount=(state.comentarios[commentKey]||[]).length;
     card.innerHTML=`
       ${d.hora?`<div class="wcard-hora">🕐 ${d.hora}</div>`:''}
       <div class="wcard-canal">${CANAL_ICONS[d.canal]||''} ${d.canal}</div>
@@ -1181,6 +1308,7 @@ function renderWeekCards(key){
       ${d.mecanica?`<div class="wcard-mecanica">${d.mecanica}</div>`:''}
       <div class="wcard-publico">${pub}</div>
       ${d.obs?`<div class="wcard-obs-text">📝 ${d.obs}</div>`:''}
+      <button class="wcard-comment-btn${commentCount>0?' has-comments':''}" onclick="openCommentModal('${key}',${idx})" title="Comentários">💬${commentCount>0?` ${commentCount}`:''}</button>
       <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
       <div class="wcard-footer">
         <span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>
@@ -1650,9 +1778,11 @@ async function initFirebase() {
   // 1. Carrega dados existentes da nuvem (ou usa exemplos)
   const cloudData = await window._fb.load();
   if (cloudData && cloudData.disparos) {
-    state.disparos   = cloudData.disparos;
-    state.campaigns  = cloudData.campaigns  || [];
+    state.disparos    = cloudData.disparos;
+    state.campaigns   = cloudData.campaigns   || [];
     state.motesCustom = cloudData.motesCustom || {};
+    state.comentarios = cloudData.comentarios || {};
+    state.negociacoes = cloudData.negociacoes || [];
     setCollabStatus(`Carregado da nuvem às ${new Date().toLocaleTimeString('pt-BR')}`, true);
     showToast('☁️ Dados carregados da nuvem!');
   } else {
@@ -1670,6 +1800,7 @@ async function initFirebase() {
   })();
   renderMonthGrid();
   setSyncStatus('live');
+  applyComercialMode();
 
   // 2. Listener em tempo real
   window._fb.listen((data) => {
@@ -1677,15 +1808,18 @@ async function initFirebase() {
     if (!data || !data.disparos) return;
 
     const prevCount = Object.values(state.disparos).reduce((a,v)=>a+v.length,0);
-    state.disparos   = data.disparos;
-    state.campaigns  = data.campaigns  || [];
+    state.disparos    = data.disparos;
+    state.campaigns   = data.campaigns   || [];
     state.motesCustom = data.motesCustom || {};
+    state.comentarios = data.comentarios || {};
+    state.negociacoes = data.negociacoes || [];
     const newCount = Object.values(state.disparos).reduce((a,v)=>a+v.length,0);
 
     // Re-renderiza a aba ativa
     if (document.getElementById('page-monthly').classList.contains('active'))   renderMonthGrid();
     if (document.getElementById('page-weekly').classList.contains('active'))    buildWeekCalendar();
     if (document.getElementById('page-consolidation').classList.contains('active')) renderConsolidation();
+    if (document.getElementById('page-negociacao').classList.contains('active')) buildNegociacaoPage();
 
     const at = data.savedAt ? new Date(data.savedAt).toLocaleTimeString('pt-BR') : '';
     setCollabStatus(`Atualizado às ${at}`, true);
@@ -1711,8 +1845,143 @@ if (window._fbReady) {
       })();
       renderMonthGrid();
       showToast('⚠ Firebase não conectado — modo offline');
+      applyComercialMode();
     }
   }, 3000);
+}
+
+// ════ MODO COMERCIAL ════
+const IS_COMERCIAL = new URLSearchParams(location.search).get('modo') === 'comercial';
+
+function applyComercialMode(){
+  if(!IS_COMERCIAL) return;
+  document.body.classList.add('comercial-mode');
+  document.getElementById('comercial-banner').classList.add('show');
+  document.querySelector('.tab-consolidation').style.display='none';
+  document.querySelector('.collab-bar').style.display='none';
+  document.getElementById('neg-form-section').style.display='block';
+  document.getElementById('neg-list-title').textContent='Suas solicitações';
+}
+
+// ════ COMENTÁRIOS ════
+let _commentTarget={date:null,idx:null};
+
+function openCommentModal(date,idx){
+  _commentTarget={date,idx};
+  const key=date+'|'+idx;
+  const comments=state.comentarios[key]||[];
+  const d=state.disparos[date]?.[idx];
+  document.getElementById('comment-modal-title').textContent=`💬 ${d?d.produto||d.temaLivre||'Disparo':'Comentários'}`;
+  const list=document.getElementById('comment-list');
+  list.innerHTML=comments.length===0
+    ?'<div style="text-align:center;color:var(--text-light);padding:20px;font-size:.84rem">Nenhum comentário ainda.</div>'
+    :comments.map(c=>`<div class="comment-item"><div class="comment-item-header"><span class="comment-item-autor">${c.autor}</span><span class="comment-item-ts">${new Date(c.ts).toLocaleString('pt-BR')}</span></div><div class="comment-item-texto">${c.texto}</div></div>`).join('');
+  document.getElementById('comment-autor').value='';
+  document.getElementById('comment-texto').value='';
+  document.getElementById('comment-modal-overlay').classList.add('open');
+}
+
+function closeCommentModal(){
+  document.getElementById('comment-modal-overlay').classList.remove('open');
+}
+
+document.getElementById('comment-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeCommentModal();});
+
+function addComment(){
+  const autor=document.getElementById('comment-autor').value.trim();
+  const texto=document.getElementById('comment-texto').value.trim();
+  if(!autor){showToast('Informe seu nome.');return;}
+  if(!texto){showToast('Escreva um comentário.');return;}
+  const key=_commentTarget.date+'|'+_commentTarget.idx;
+  if(!state.comentarios[key])state.comentarios[key]=[];
+  state.comentarios[key].push({autor,texto,ts:new Date().toISOString()});
+  fbSave();
+  showToast('Comentário enviado!');
+  openCommentModal(_commentTarget.date,_commentTarget.idx);
+  if(document.getElementById('page-weekly').classList.contains('active'))renderWeekCards(_commentTarget.date);
+}
+
+// ════ NEGOCIAÇÃO ════
+let _negCanalSelecionado=null;
+
+function selectNegCanal(el){
+  _negCanalSelecionado=el.dataset.canal;
+  document.querySelectorAll('#neg-canal-opts .canal-opt').forEach(o=>{
+    const cc=canalClass(o.dataset.canal)||'push';
+    o.className='canal-opt'+(o.dataset.canal===_negCanalSelecionado?` sel-${cc}`:'');
+  });
+}
+
+function submitNegociacao(){
+  const nome=document.getElementById('neg-nome').value.trim();
+  const descricao=document.getElementById('neg-descricao').value.trim();
+  if(!nome){showToast('Informe seu nome.');return;}
+  if(!descricao){showToast('Descreva a solicitação.');return;}
+  state.negociacoes.push({
+    id:Date.now().toString(),
+    nome,
+    canal:_negCanalSelecionado||'Sem preferência',
+    data:document.getElementById('neg-data').value||null,
+    produto:document.getElementById('neg-produto').value.trim()||null,
+    descricao,
+    ts:new Date().toISOString(),
+    status:'pendente'
+  });
+  fbSave();
+  document.getElementById('neg-nome').value='';
+  document.getElementById('neg-data').value='';
+  document.getElementById('neg-produto').value='';
+  document.getElementById('neg-descricao').value='';
+  _negCanalSelecionado=null;
+  document.querySelectorAll('#neg-canal-opts .canal-opt').forEach(o=>o.className='canal-opt');
+  showToast('✅ Solicitação enviada!');
+  buildNegList();
+}
+
+function changeNegStatus(id,status){
+  const neg=state.negociacoes.find(n=>n.id===id);
+  if(!neg)return;
+  neg.status=status;
+  fbSave();
+  buildNegList();
+}
+
+function buildNegList(){
+  const filter=document.getElementById('neg-filter')?.value||'';
+  const list=document.getElementById('neg-list');
+  if(!list)return;
+  const statusLabel={pendente:'Pendente',analise:'Em análise',aprovado:'Aprovado',recusado:'Recusado'};
+  let items=[...state.negociacoes].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  if(filter)items=items.filter(n=>n.status===filter);
+  const sub=document.getElementById('neg-list-sub');
+  if(sub)sub.textContent=`${items.length} solicitação${items.length!==1?'ões':''}`;
+  if(items.length===0){
+    list.innerHTML='<div class="empty-state"><div class="icon">📋</div>Nenhuma solicitação'+(filter?' com esse status.':' ainda.')+'</div>';
+    return;
+  }
+  list.innerHTML=items.map(n=>`
+    <div class="neg-card">
+      <div class="neg-card-header">
+        <div><div class="neg-card-nome">${n.nome}</div><div class="neg-card-ts">${new Date(n.ts).toLocaleString('pt-BR')}</div></div>
+        <span class="neg-status-badge ${n.status||'pendente'}">${statusLabel[n.status]||'Pendente'}</span>
+      </div>
+      <div class="neg-card-descricao">${n.descricao}</div>
+      <div class="neg-card-meta">
+        ${n.canal?`<span class="neg-meta-chip">📡 ${n.canal}</span>`:''}
+        ${n.data?`<span class="neg-meta-chip">📅 ${new Date(n.data+'T12:00:00').toLocaleDateString('pt-BR')}</span>`:''}
+        ${n.produto?`<span class="neg-meta-chip">🏷 ${n.produto}</span>`:''}
+      </div>
+      ${!IS_COMERCIAL?`<div class="neg-status-row"><span style="font-size:.72rem;color:var(--text-muted);font-weight:600">Alterar:</span>
+        <button class="neg-status-btn" onclick="changeNegStatus('${n.id}','pendente')">Pendente</button>
+        <button class="neg-status-btn" onclick="changeNegStatus('${n.id}','analise')">Em análise</button>
+        <button class="neg-status-btn" onclick="changeNegStatus('${n.id}','aprovado')">Aprovado</button>
+        <button class="neg-status-btn" onclick="changeNegStatus('${n.id}','recusado')">Recusado</button>
+      </div>`:''}
+    </div>`).join('');
+}
+
+function buildNegociacaoPage(){
+  buildNegList();
 }
 
 </script>
