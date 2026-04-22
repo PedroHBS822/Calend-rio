@@ -813,7 +813,17 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
       <input type="time" class="field-input" id="hora-input" style="width:160px">
     </div>
 
-    <div class="field">
+    <div class="field" id="field-nome-acao" style="display:none">
+      <label>Nome da ação</label>
+      <input type="text" class="field-input" id="nome-acao-input" placeholder="Ex: Campanha de reativação Q2">
+    </div>
+
+    <div class="field" id="field-perfil-base" style="display:none">
+      <label>Perfil da Base</label>
+      <input type="text" class="field-input" id="perfil-base-input" placeholder="Ex: Clientes inativos 90 dias">
+    </div>
+
+    <div class="field" id="field-produto">
       <label>Produto / Tema</label>
       <div class="produto-mode-tabs">
         <div class="pm-tab active" id="pm-catalogo" onclick="setProdutoMode(&#39;catalogo&#39;)">🛒 Catálogo</div>
@@ -831,7 +841,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" id="field-mecanica">
       <label>Mecânica</label>
       <div class="mecanica-presets" id="mecanica-presets">
         <div class="mecanica-chip" onclick="toggleMecanica(this,&#39;10% de Cashback&#39;)">10% Cashback</div>
@@ -846,7 +856,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
       <input type="text" class="field-input" id="mecanica-custom" placeholder="Ou descreva a mecânica...">
     </div>
 
-    <div class="field">
+    <div class="field" id="field-publico">
       <label>Público <span style="color:var(--accent);font-size:.65rem;font-weight:600">(múltipla seleção)</span></label>
       <div class="publico-grid" id="publico-grid"></div>
       <div style="display:flex;gap:6px;margin-top:8px;">
@@ -855,7 +865,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" id="field-ticket">
       <label>Ticket</label>
       <div class="ticket-options">
         <div class="ticket-option" id="ticket-high" onclick="selectTicket(&#39;High Ticket&#39;)">
@@ -1336,21 +1346,22 @@ function renderWeekCards(key){
       if(!e.target.classList.contains('wcard-del')&&!e.target.classList.contains('wcard-briefing-btn')&&!e.target.classList.contains('wcard-feito-btn')&&!e.target.classList.contains('wcard-comment-btn'))openModal(key,idx);
     };
     // ordenar por hora se disponível
-    const pub=(Array.isArray(d.publico)?d.publico:[d.publico]).join(', ');
-    const nome=d.produto||d.temaLivre||'—';
+    const simplified=isSimplifiedProduct();
+    const pub=simplified?(d.perfilBase||''):(Array.isArray(d.publico)?d.publico:[d.publico]).join(', ');
+    const nome=simplified?(d.nomeAcao||'—'):(d.produto||d.temaLivre||'—');
     const commentKey=key+'|'+idx;
     const commentCount=(state.comentarios[commentKey]||[]).length;
     card.innerHTML=`
       ${d.hora?`<div class="wcard-hora">🕐 ${d.hora}</div>`:''}
       <div class="wcard-canal">${CANAL_ICONS[d.canal]||''} ${d.canal}</div>
       <div class="wcard-produto">${nome}</div>
-      ${d.mecanica?`<div class="wcard-mecanica">${d.mecanica}</div>`:''}
-      <div class="wcard-publico">${pub}</div>
+      ${!simplified&&d.mecanica?`<div class="wcard-mecanica">${d.mecanica}</div>`:''}
+      ${pub?`<div class="wcard-publico">${pub}</div>`:''}
       ${d.obs?`<div class="wcard-obs-text">📝 ${d.obs}</div>`:''}
       <button class="wcard-comment-btn${commentCount>0?' has-comments':''}" onclick="openCommentModal('${key}',${idx})" title="Comentários">💬${commentCount>0?` ${commentCount}`:''}</button>
       <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
       <div class="wcard-footer">
-        <span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>
+        ${!simplified?`<span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>`:'<span></span>'}
         <div style="display:flex;align-items:center;gap:3px">
           <button class="wcard-feito-btn${d.disparoFeito?' feito-on':''}" onclick="toggleDisparoFeito('${key}',${idx})" title="${d.disparoFeito?'Disparo feito — clique para desmarcar':'Marcar disparo como feito'}">✓</button>
           <button class="wcard-briefing-btn${d.briefingAberto?' briefing-on':''}" onclick="toggleBriefing('${key}',${idx})" title="${d.briefingAberto?'Briefing aberto — clique para desmarcar':'Marcar briefing como aberto'}">${d.briefingAberto?'📬':'📭'}</button>
@@ -1385,11 +1396,23 @@ function openModal(date,index){
   document.getElementById('mecanica-custom').value='';
   document.getElementById('publico-custom-input').value='';
   document.getElementById('obs-input').value='';
+  document.getElementById('nome-acao-input').value='';
+  document.getElementById('perfil-base-input').value='';
   document.querySelectorAll('.mecanica-chip').forEach(c=>c.classList.remove('selected'));
+
+  // Mostra campos conforme o produto
+  const simplified=isSimplifiedProduct();
+  ['field-produto','field-mecanica','field-publico','field-ticket'].forEach(id=>document.getElementById(id).style.display=simplified?'none':'');
+  ['field-nome-acao','field-perfil-base'].forEach(id=>document.getElementById(id).style.display=simplified?'':'none');
 
   if(index!==null&&state.disparos[date]?.[index]){
     const d=state.disparos[date][index];
-    modalState.selectedPublicos=Array.isArray(d.publico)?[...d.publico]:[d.publico];
+    if(simplified){
+      if(d.nomeAcao) document.getElementById('nome-acao-input').value=d.nomeAcao;
+      if(d.perfilBase) document.getElementById('perfil-base-input').value=d.perfilBase;
+    } else {
+      modalState.selectedPublicos=Array.isArray(d.publico)?[...d.publico]:[d.publico];
+    }
     modalState.selectedCanal=d.canal;modalState.selectedTicket=d.ticket;
     modalState.selectedMecanica=d.mecanica||null;
     if(d.hora) document.getElementById('hora-input').value=d.hora;
@@ -1471,30 +1494,27 @@ function clearProduto(){
 }
 document.addEventListener('click',function(e){if(!e.target.closest('.product-search-wrap'))document.getElementById('product-dropdown').classList.remove('open');});
 
+function isSimplifiedProduct(){return currentProduct==='mobilidade'||currentProduct==='recarga';}
+
 function saveDisparo(){
   if(!modalState.selectedCanal){showToast('Selecione um canal.');return;}
   const hora=document.getElementById('hora-input').value;
   if(!hora){showToast('Informe o horário de envio.');return;}
-  if(!modalState.selectedPublicos.length){showToast('Selecione ao menos um público.');return;}
-  if(!modalState.selectedTicket){showToast('Selecione o tipo de ticket.');return;}
-  const tl=document.getElementById('tema-livre-input').value.trim();
-  if(produtoMode==='livre'&&!tl){showToast('Informe o tema do disparo.');return;}
-  const mecanicaCustom=document.getElementById('mecanica-custom').value.trim();
-  const mecanica=modalState.selectedMecanica||mecanicaCustom||null;
-
-  const disparo={
-    canal:modalState.selectedCanal,
-    hora,
-    publico:[...modalState.selectedPublicos],
-    ticket:modalState.selectedTicket,
-    produtoId:produtoMode==='catalogo'&&modalState.selectedProduto?modalState.selectedProduto.id:null,
-    produto:produtoMode==='catalogo'&&modalState.selectedProduto?modalState.selectedProduto.nome:null,
-    temaLivre:produtoMode==='livre'?tl:null,
-    mecanica,
-    briefingAberto:(modalState.editIndex!==null&&state.disparos[modalState.editDate]?.[modalState.editIndex]?.briefingAberto)||false,
-    disparoFeito:(modalState.editIndex!==null&&state.disparos[modalState.editDate]?.[modalState.editIndex]?.disparoFeito)||false,
-    obs:document.getElementById('obs-input').value.trim()||null,
-  };
+  const prev=state.disparos[modalState.editDate]?.[modalState.editIndex];
+  const base={canal:modalState.selectedCanal,hora,briefingAberto:prev?.briefingAberto||false,disparoFeito:prev?.disparoFeito||false,obs:document.getElementById('obs-input').value.trim()||null};
+  let disparo;
+  if(isSimplifiedProduct()){
+    const nomeAcao=document.getElementById('nome-acao-input').value.trim();
+    if(!nomeAcao){showToast('Informe o nome da ação.');return;}
+    disparo={...base,nomeAcao,perfilBase:document.getElementById('perfil-base-input').value.trim()||null};
+  } else {
+    if(!modalState.selectedPublicos.length){showToast('Selecione ao menos um público.');return;}
+    if(!modalState.selectedTicket){showToast('Selecione o tipo de ticket.');return;}
+    const tl=document.getElementById('tema-livre-input').value.trim();
+    if(produtoMode==='livre'&&!tl){showToast('Informe o tema do disparo.');return;}
+    const mecanica=modalState.selectedMecanica||document.getElementById('mecanica-custom').value.trim()||null;
+    disparo={...base,publico:[...modalState.selectedPublicos],ticket:modalState.selectedTicket,produtoId:produtoMode==='catalogo'&&modalState.selectedProduto?modalState.selectedProduto.id:null,produto:produtoMode==='catalogo'&&modalState.selectedProduto?modalState.selectedProduto.nome:null,temaLivre:produtoMode==='livre'?tl:null,mecanica};
+  }
 
   if(!state.disparos[modalState.editDate])state.disparos[modalState.editDate]=[];
   if(modalState.editIndex!==null){state.disparos[modalState.editDate][modalState.editIndex]=disparo;showToast('Disparo atualizado!');}
@@ -1960,21 +1980,23 @@ function openCommentModal(date,idx){
   // Detalhes do disparo
   const detail=document.getElementById('disparo-detail');
   if(d){
-    const pub=(Array.isArray(d.publico)?d.publico:[d.publico]);
     const [day,month]=date.split('-').slice(1).reverse();
     const canalColor={Push:'var(--push)','E-mail':'var(--email)',WhatsApp:'var(--whatsapp)','In-App':'var(--inapp)',DM:'var(--dm)'}[d.canal]||'var(--text)';
-    const statusBadges=[
-      d.disparoFeito?'<span class="dd-badge feito">✓ Disparo feito</span>':'',
-      d.briefingAberto?'<span class="dd-badge briefing">📬 Briefing aberto</span>':''
-    ].filter(Boolean).join('');
+    const statusBadges=[d.disparoFeito?'<span class="dd-badge feito">✓ Disparo feito</span>':'',d.briefingAberto?'<span class="dd-badge briefing">📬 Briefing aberto</span>':''].filter(Boolean).join('');
+    const simplified=isSimplifiedProduct();
     detail.innerHTML=`<div class="disparo-detail">
       <div class="dd-row"><span class="dd-label">Data</span><span class="dd-value">${day}/${month}</span></div>
       ${d.hora?`<div class="dd-row"><span class="dd-label">Horário</span><span class="dd-value">🕐 ${d.hora}</span></div>`:''}
       <div class="dd-row"><span class="dd-label">Canal</span><span class="dd-canal" style="color:${canalColor}">${CANAL_ICONS[d.canal]||''} ${d.canal}</span></div>
-      <div class="dd-row"><span class="dd-label">Produto</span><span class="dd-value">${d.produto||d.temaLivre||'—'}</span></div>
-      ${d.mecanica?`<div class="dd-row"><span class="dd-label">Mecânica</span><span class="dd-value">${d.mecanica}</span></div>`:''}
-      <div class="dd-row"><span class="dd-label">Público</span><div class="dd-tags">${pub.map(p=>`<span class="dd-tag">${p}</span>`).join('')}</div></div>
-      <div class="dd-row"><span class="dd-label">Ticket</span><span class="dd-value">${d.ticket==='High Ticket'?'▲ High Ticket':'▼ Low Ticket'}</span></div>
+      ${simplified?`
+        <div class="dd-row"><span class="dd-label">Nome da ação</span><span class="dd-value">${d.nomeAcao||'—'}</span></div>
+        ${d.perfilBase?`<div class="dd-row"><span class="dd-label">Perfil da Base</span><span class="dd-value">${d.perfilBase}</span></div>`:''}
+      `:`
+        <div class="dd-row"><span class="dd-label">Produto</span><span class="dd-value">${d.produto||d.temaLivre||'—'}</span></div>
+        ${d.mecanica?`<div class="dd-row"><span class="dd-label">Mecânica</span><span class="dd-value">${d.mecanica}</span></div>`:''}
+        <div class="dd-row"><span class="dd-label">Público</span><div class="dd-tags">${(Array.isArray(d.publico)?d.publico:[d.publico]).map(p=>`<span class="dd-tag">${p}</span>`).join('')}</div></div>
+        <div class="dd-row"><span class="dd-label">Ticket</span><span class="dd-value">${d.ticket==='High Ticket'?'▲ High Ticket':'▼ Low Ticket'}</span></div>
+      `}
       ${d.obs?`<div class="dd-row"><span class="dd-label">Obs</span><span class="dd-value">📝 ${d.obs}</span></div>`:''}
       ${statusBadges?`<div class="dd-status-row">${statusBadges}</div>`:''}
     </div>`;
