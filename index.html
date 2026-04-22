@@ -493,6 +493,16 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .comment-item-texto{font-size:.82rem;color:var(--text);line-height:1.5;}
 body.dark .neg-card,body.dark .neg-form-card{background:var(--surface);}
 
+/* ── Bolinha de comentários (Growth) ── */
+#comment-alert-btn{position:fixed;bottom:28px;right:28px;min-width:52px;height:52px;border-radius:26px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:.72rem;font-weight:800;display:none;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.22);z-index:200;transition:transform .15s,box-shadow .15s,background .2s;gap:1px;padding:0 14px;}
+#comment-alert-btn:hover{transform:scale(1.07);box-shadow:0 6px 28px rgba(0,0,0,.28);}
+#comment-alert-btn.highlight-on{background:var(--push);}
+#comment-alert-count{font-size:1rem;font-weight:900;line-height:1;}
+#comment-alert-label{font-size:.6rem;font-weight:700;opacity:.85;letter-spacing:.03em;}
+.wcard.comment-highlight{box-shadow:0 0 0 2.5px var(--accent),var(--shadow)!important;z-index:1;}
+body.comment-highlight-mode .wcard:not(.comment-highlight){opacity:.3;pointer-events:none;}
+body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
+
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--text);border-radius:10px;padding:11px 18px;font-size:.84rem;color:#fff;font-weight:500;box-shadow:var(--shadow-lg);transform:translateY(60px);opacity:0;transition:all .3s;z-index:300;}
 .toast.show{transform:translateY(0);opacity:1;}
@@ -1345,6 +1355,7 @@ function renderWeekCards(key){
     return ha.localeCompare(hb);
   });
   cards.forEach(card=>c.appendChild(card));
+  if(_commentHighlightMode)_applyHighlight();
 }
 
 // ════ MODAL DISPARO ════
@@ -1815,6 +1826,7 @@ async function initFirebase() {
   renderMonthGrid();
   setSyncStatus('live');
   applyComercialMode();
+  updateCommentAlert();
 
   // 2. Listener em tempo real
   window._fb.listen((data) => {
@@ -1834,6 +1846,8 @@ async function initFirebase() {
     if (document.getElementById('page-weekly').classList.contains('active'))    buildWeekCalendar();
     if (document.getElementById('page-consolidation').classList.contains('active')) renderConsolidation();
     if (document.getElementById('page-negociacao').classList.contains('active')) buildNegociacaoPage();
+    updateCommentAlert();
+    if(_commentHighlightMode)_applyHighlight();
 
     const at = data.savedAt ? new Date(data.savedAt).toLocaleTimeString('pt-BR') : '';
     setCollabStatus(`Atualizado às ${at}`, true);
@@ -1941,6 +1955,7 @@ function addComment(){
   state.comentarios[key].push({autor,texto,ts:new Date().toISOString()});
   fbSave();
   showToast('Comentário enviado!');
+  updateCommentAlert();
   openCommentModal(_commentTarget.date,_commentTarget.idx);
   if(document.getElementById('page-weekly').classList.contains('active'))renderWeekCards(_commentTarget.date);
 }
@@ -2031,6 +2046,7 @@ function deleteComment(date,idx,ci){
   state.comentarios[key].splice(ci,1);
   if(state.comentarios[key].length===0)delete state.comentarios[key];
   fbSave();
+  updateCommentAlert();
   openCommentModal(date,idx);
   if(document.getElementById('page-weekly').classList.contains('active'))renderWeekCards(date);
 }
@@ -2045,7 +2061,56 @@ function buildNegociacaoPage(){
   buildNegList();
 }
 
+// ════ BOLINHA DE COMENTÁRIOS ════
+let _commentHighlightMode=false;
+
+function updateCommentAlert(){
+  if(IS_COMERCIAL)return;
+  const btn=document.getElementById('comment-alert-btn');
+  const countEl=document.getElementById('comment-alert-count');
+  const total=Object.values(state.comentarios).reduce((a,v)=>a+v.length,0);
+  if(total>0){
+    btn.style.display='flex';
+    countEl.textContent=total;
+  } else {
+    btn.style.display='none';
+    if(_commentHighlightMode)_exitHighlight();
+  }
+}
+
+function _exitHighlight(){
+  _commentHighlightMode=false;
+  document.getElementById('comment-alert-btn').classList.remove('highlight-on');
+  document.body.classList.remove('comment-highlight-mode');
+  document.querySelectorAll('.wcard').forEach(c=>c.classList.remove('comment-highlight'));
+}
+
+function _applyHighlight(){
+  document.body.classList.add('comment-highlight-mode');
+  document.querySelectorAll('.wcard').forEach(card=>{
+    const key=card.dataset.srcDate+'|'+card.dataset.srcIdx;
+    if(state.comentarios[key]?.length>0) card.classList.add('comment-highlight');
+    else card.classList.remove('comment-highlight');
+  });
+}
+
+function toggleCommentHighlight(){
+  if(_commentHighlightMode){_exitHighlight();return;}
+  _commentHighlightMode=true;
+  document.getElementById('comment-alert-btn').classList.add('highlight-on');
+  // Garante visão semanal
+  if(!document.getElementById('page-weekly').classList.contains('active')){
+    const btn=document.querySelector('[onclick*="weekly"]');
+    if(btn)switchTab('weekly',btn);
+  }
+  _applyHighlight();
+}
+
 </script>
 
 
+<button id="comment-alert-btn" onclick="toggleCommentHighlight()" title="Ver cards com comentários">
+  <span id="comment-alert-count">0</span>
+  <span id="comment-alert-label">💬 comentários</span>
+</button>
 </body></html>
