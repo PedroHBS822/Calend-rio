@@ -859,7 +859,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
     <div class="field" id="field-publico">
       <label>Público <span style="color:var(--accent);font-size:.65rem;font-weight:600">(múltipla seleção)</span></label>
       <div class="publico-grid" id="publico-grid"></div>
-      <div style="display:flex;gap:6px;margin-top:8px;">
+      <div id="publico-custom-row" style="display:flex;gap:6px;margin-top:8px;">
         <input type="text" class="field-input" id="publico-custom-input" placeholder="Outro público..." style="flex:1" onkeydown="if(event.key==='Enter'){addPublicoCustom();event.preventDefault();}">
         <button class="btn btn-secondary" onclick="addPublicoCustom()" style="padding:6px 12px;font-size:.78rem;white-space:nowrap">+ Adicionar</button>
       </div>
@@ -991,6 +991,102 @@ const CATALOGO = [
   {id:'m02',nome:'On Running Shorts 5" Performance',categoria:'Moda',preco:'R$ 387',marca:'On Running'},
   {id:'p01',nome:'Polishop Suplemento Descanse VIVA',categoria:'Suplementos',preco:'R$ 54',marca:'Polishop'},
   {id:'p02',nome:'Polishop Suplemento Articulações',categoria:'Suplementos',preco:'R$ 54',marca:'Polishop'},
+];
+
+const CATALOGO_DG_AFI=[
+  {n:'03.03',c:'afiliados'},{n:'03.03',c:'dg'},{n:'04.04 Afiliados',c:'afiliados'},{n:'04.04 DG',c:'dg'},
+  {n:'123 Milhas',c:'afiliados'},{n:'99Food',c:'dg'},{n:'Acer',c:'afiliados'},{n:'adcos',c:'afiliados'},
+  {n:'Adidas',c:'afiliados'},{n:'Agora ou Nunca',c:'afiliados'},{n:'Airbnb',c:'dg'},{n:'Aliexpress',c:'afiliados'},
+  {n:'Allu Consoles',c:'dg'},{n:'Allu Notebook',c:'afiliados'},{n:'Amaro',c:'afiliados'},{n:'Amazon Brasil',c:'afiliados'},
+  {n:'Amazon Casa',c:'afiliados'},{n:'Amazon Livros',c:'afiliados'},{n:'Amend',c:'afiliados'},{n:'Americanas',c:'afiliados'},
+  {n:'Amigo Secreto',c:'afiliados'},{n:'Ana Capri',c:'dg'},{n:'App Store Gift Cards',c:'dg'},{n:'Arezzo',c:'afiliados'},
+  {n:'Arezzo DG',c:'dg'},{n:'Assaí',c:'dg'},{n:'Avakin',c:'dg'},{n:'Avon',c:'afiliados'},
+  {n:'Bacio di Latte',c:'dg'},{n:'Beauty Box',c:'afiliados'},{n:'Bebê Fofuxo',c:'afiliados'},{n:'Bebidas',c:'afiliados'},
+  {n:'Beleza',c:'afiliados'},{n:'Beleza na Web',c:'afiliados'},{n:'BetNacional',c:'afiliados'},{n:'Bio2 Organic',c:'afiliados'},
+  {n:'Blizzard',c:'dg'},{n:'Booking',c:'afiliados'},{n:'Braé',c:'afiliados'},{n:'Brasil Cacau',c:'afiliados'},
+  {n:'Brastemp',c:'afiliados'},{n:'Brawl Stars',c:'dg'},{n:'Brinox',c:'afiliados'},{n:'Britânia',c:'afiliados'},
+  {n:'Bundle iFood Google',c:'dg'},{n:'Buser Afi',c:'afiliados'},{n:'Buser DG',c:'dg'},{n:'C&A',c:'afiliados'},
+  {n:'C&C',c:'afiliados'},{n:'Cacau Show',c:'dg'},{n:'Cafés',c:'afiliados'},{n:'Camicado',c:'afiliados'},
+  {n:'Carnaval',c:'afiliados'},{n:'Carrefour',c:'afiliados'},{n:'Carrefour Mercado',c:'afiliados'},{n:'Cartoes Multimarcas',c:'dg'},
+  {n:'Casa',c:'afiliados'},{n:'Casas Bahia',c:'afiliados'},{n:'Cashback em Alta',c:'afiliados'},{n:'Cashback Exclusivo',c:'afiliados'},
+  {n:'Cashback Garantido',c:'afiliados'},{n:'Categ Trio Games',c:'dg'},{n:'categoria cupons',c:'afiliados'},{n:'Categoria Casas',c:'afiliados'},
+  {n:'Categoria Games',c:'dg'},{n:'Celulares',c:'afiliados'},{n:'Centauro',c:'afiliados'},{n:'Claro TV',c:'dg'},
+  {n:'Clash of Clans',c:'dg'},{n:'Clash Royale',c:'dg'},{n:'Clube Marisol',c:'afiliados'},{n:'Cobasi',c:'afiliados'},
+  {n:'Coco Bambu',c:'dg'},{n:'Comidas e bebidas',c:'dg'},{n:'Compra Certa',c:'afiliados'},{n:'Compra Flora',c:'afiliados'},
+  {n:'Connect Parts',c:'afiliados'},{n:'Consoles',c:'dg'},{n:'Consul',c:'afiliados'},{n:'Converse',c:'afiliados'},
+  {n:'crocs',c:'dg'},{n:'Cupons',c:'afiliados'},{n:'Dafiti',c:'afiliados'},{n:'Decathlon',c:'afiliados'},
+  {n:'Decolar',c:'afiliados'},{n:'Deeplink Gift Cards',c:'dg'},{n:'Dengo',c:'dg'},{n:'Dia das Mães',c:'afiliados'},
+  {n:'Dia do Atleta',c:'afiliados'},{n:'Dia do Consumidor',c:'afiliados'},{n:'Dia do Gamer',c:'dg'},{n:'Dolce Gusto',c:'afiliados'},
+  {n:'Drogal',c:'afiliados'},{n:'DrogaRaia',c:'afiliados'},{n:'Drogaria',c:'afiliados'},{n:'Drogaria Pacheco',c:'afiliados'},
+  {n:'Drogaria São Paulo',c:'afiliados'},{n:'Drogasil',c:'afiliados'},{n:'Dzarm',c:'afiliados'},{n:'É do Brasil',c:'afiliados'},
+  {n:'Ecadeiras',c:'afiliados'},{n:'Electrolux',c:'afiliados'},{n:'Eletronicos',c:'afiliados'},{n:'Epoca',c:'afiliados'},
+  {n:'Especial 48 Horas',c:'afiliados'},{n:'Especial Drogasil e Droga Raia',c:'afiliados'},{n:'Especial Farmacia',c:'afiliados'},
+  {n:'Especial Férias',c:'afiliados'},{n:'Esportes',c:'afiliados'},{n:'Esquenta dia dos pais',c:'afiliados'},
+  {n:'Esquenta do Consumidor',c:'afiliados'},{n:'Estoque',c:'afiliados'},{n:'Estrela',c:'dg'},{n:'Eudora',c:'afiliados'},
+  {n:'Eudora DG',c:'dg'},{n:'Evino',c:'afiliados'},{n:'Expressa',c:'afiliados'},{n:'Extra',c:'afiliados'},
+  {n:'Fast Shop',c:'afiliados'},{n:'FC 24',c:'dg'},{n:'FC Mobile',c:'dg'},{n:'Festival - Beleza',c:'afiliados'},
+  {n:'Fila',c:'afiliados'},{n:'Fim de Semana do Consumidor',c:'afiliados'},{n:'FlixBus',c:'afiliados'},{n:'Free Fire',c:'dg'},
+  {n:'Frete Gratis',c:'afiliados'},{n:'Game Friday',c:'dg'},{n:'Game Shop',c:'dg'},{n:'Games com cashback',c:'dg'},
+  {n:'Genérico',c:'afiliados'},{n:'GG Credts',c:'dg'},{n:'Gift Card',c:'dg'},{n:'Gift Card Day',c:'dg'},
+  {n:'Girafa',c:'afiliados'},{n:'Giuliana Flores',c:'afiliados'},{n:'Globo Play',c:'dg'},{n:'Gocase',c:'afiliados'},
+  {n:'Gol',c:'afiliados'},{n:'Google Play',c:'dg'},{n:'Gpneus',c:'afiliados'},{n:'Granado',c:'afiliados'},
+  {n:'Grandes Marcas',c:'afiliados'},{n:'Grandes Marcas Esporte',c:'afiliados'},{n:'Grupo Boticario',c:'afiliados'},
+  {n:'Hack Friday Beleza',c:'afiliados'},{n:'Hack Friday Gift Cards',c:'dg'},{n:'Hack Friday Páscoa',c:'afiliados'},
+  {n:'Happy Hour',c:'dg'},{n:'Havaianas',c:'afiliados'},{n:'Hay Day',c:'dg'},{n:'HBO Max',c:'dg'},
+  {n:'Hering',c:'afiliados'},{n:'Hering Outlet',c:'afiliados'},{n:'Honor of Kings',c:'dg'},{n:'HP',c:'afiliados'},
+  {n:'Hub Nintendo',c:'dg'},{n:'iFood',c:'dg'},{n:'Iguatemi 365',c:'afiliados'},{n:'Infantil',c:'afiliados'},
+  {n:'Insider',c:'afiliados'},{n:'iPlace',c:'afiliados'},{n:'Jequiti',c:'afiliados'},{n:'Jogos SuperCell',c:'dg'},
+  {n:'Kabum',c:'afiliados'},{n:'Klasme',c:'afiliados'},{n:'Klubi',c:'dg'},{n:"L'or",c:'afiliados'},
+  {n:'Lançamento Nintendo Switch 2',c:'dg'},{n:'Lancome',c:'afiliados'},{n:'League of Legends',c:'dg'},
+  {n:'LeBiscuit',c:'afiliados'},{n:'Lego',c:'afiliados'},{n:'Lenovo',c:'afiliados'},{n:'LG',c:'afiliados'},
+  {n:'Liquidacao de Verão',c:'afiliados'},{n:'LIVE!',c:'afiliados'},{n:'Loccitane',c:'afiliados'},
+  {n:'Loccitane Au Bresil',c:'afiliados'},{n:'Loccitane en Provence',c:'afiliados'},{n:'Lojas Nintendo',c:'dg'},
+  {n:'Lojas Xbox',c:'dg'},{n:'Lojas Xbox Game pass',c:'dg'},{n:'Look de Carnaval',c:'afiliados'},
+  {n:'LottoCap',c:'afiliados'},{n:'Loungerie DG',c:'dg'},{n:'MAC Cosmetics',c:'afiliados'},{n:'MadeiraMadeira',c:'afiliados'},
+  {n:'Madero',c:'dg'},{n:'Magalu',c:'afiliados'},{n:'Mais Vendidos com Cashback',c:'afiliados'},{n:'Mambo',c:'afiliados'},
+  {n:'Marabraz',c:'afiliados'},{n:'Marisa',c:'afiliados'},{n:'McAfee',c:'dg'},{n:'Melhores da Semana',c:'afiliados'},
+  {n:'Melhores do Mês',c:'afiliados'},{n:'Melhores Gift Cards',c:'dg'},{n:'Mercado PicPay',c:'afiliados'},
+  {n:'Mês do Consumidor',c:'afiliados'},{n:'Meu Game Usado',c:'afiliados'},{n:'Microsoft 365 + McAfee',c:'dg'},
+  {n:'Microsoft Office 365 Home',c:'dg'},{n:'Microsoft Office 365 Personal',c:'dg'},{n:'Midea',c:'afiliados'},
+  {n:'Minecraft',c:'dg'},{n:'Mizuno',c:'afiliados'},{n:'Mobile Legends',c:'dg'},{n:'Mobly',c:'afiliados'},
+  {n:'Moda',c:'afiliados'},{n:'Moda DG',c:'dg'},{n:'Monte Carlo DG',c:'dg'},{n:'Motorola',c:'afiliados'},
+  {n:'Movida',c:'afiliados'},{n:'Multi',c:'afiliados'},{n:'Mundo do Cabelereiro',c:'afiliados'},{n:'Nars',c:'afiliados'},
+  {n:'Natal Beleza',c:'afiliados'},{n:'Natal Casa Renovada',c:'afiliados'},{n:'NBA.com',c:'dg'},{n:'Netflix',c:'dg'},
+  {n:'Netshoes',c:'afiliados'},{n:'Netshoes DG',c:'dg'},{n:'New Balance',c:'afiliados'},{n:'Nike',c:'afiliados'},
+  {n:'Nintendo Assinaturas',c:'dg'},{n:'Nintendo Cash',c:'dg'},{n:'Nintendo Games',c:'dg'},{n:'Nintendo Gift Card',c:'dg'},
+  {n:'Nintendo Zelda',c:'dg'},{n:'Novas Lojas',c:'dg'},{n:'Novidades',c:'afiliados'},{n:'Nuuvem',c:'dg'},
+  {n:'O Boticário',c:'afiliados'},{n:'O Boticario Gift Card',c:'dg'},{n:'Océane',c:'afiliados'},
+  {n:'Ofertas do Mês',c:'dg'},{n:'Ofertas do Mês +',c:'dg'},{n:'Ofertas Especiais Gift Cards',c:'dg'},
+  {n:'Okulos',c:'afiliados'},{n:'Olympikus',c:'afiliados'},{n:'Opaque',c:'afiliados'},{n:'Oqvestir',c:'afiliados'},
+  {n:'Outback',c:'dg'},{n:'Pague Menos',c:'afiliados'},{n:'Pague menos - dg',c:'dg'},{n:'Pandora',c:'afiliados'},
+  {n:'Páscoa',c:'afiliados'},{n:'Pascoa Shop',c:'dg'},{n:'PC Game Pass',c:'dg'},{n:'Perfect World',c:'dg'},
+  {n:'Pet',c:'afiliados'},{n:'Petlove DG',c:'dg'},{n:'Petz',c:'afiliados'},{n:'Philco',c:'afiliados'},
+  {n:'Pilão',c:'afiliados'},{n:'Pix no Cartão',c:'afiliados'},{n:'Playstation Store',c:'dg'},{n:'Plug In',c:'afiliados'},
+  {n:'Pneu Store',c:'afiliados'},{n:'Polishop',c:'afiliados'},{n:'Ponto',c:'afiliados'},{n:'Positivo',c:'afiliados'},
+  {n:'Presente Gamer',c:'dg'},{n:'Presentes última hora',c:'dg'},{n:'Puma',c:'afiliados'},{n:'Quem disse Berenice',c:'afiliados'},
+  {n:'Ragnarok',c:'dg'},{n:'Rappi',c:'dg'},{n:'Razer Gold',c:'dg'},{n:'Recarga Cel',c:'dg'},
+  {n:'Renner',c:'afiliados'},{n:'Ressaca Black',c:'afiliados'},{n:'Restaurantes',c:'dg'},{n:'Ri Happy',c:'dg'},
+  {n:'Riachuelo Afiliados',c:'afiliados'},{n:'Riachuelo DG',c:'dg'},{n:'Richards Brazil',c:'afiliados'},
+  {n:'Riot Points',c:'dg'},{n:'Roblox',c:'dg'},{n:'Samsung',c:'afiliados'},{n:'Sauber',c:'dg'},
+  {n:'Saúde',c:'afiliados'},{n:'Schutz',c:'dg'},{n:'Sem Parar',c:'afiliados'},{n:'Semana da Beleza',c:'afiliados'},
+  {n:'Semana do Consumidor',c:'afiliados'},{n:'Semana Gamer',c:'afiliados'},{n:'Semana Orgulho Nerd',c:'dg'},
+  {n:'Sephora',c:'afiliados'},{n:'Shein',c:'afiliados'},{n:'Shell Box OLD',c:'dg'},{n:'Shoestock',c:'dg'},
+  {n:'Shopee',c:'afiliados'},{n:'Shopee DG',c:'dg'},{n:'SkyTV',c:'dg'},{n:'Sony',c:'dg'},
+  {n:'Sorte Online',c:'afiliados'},{n:'Sorte Online DG',c:'dg'},{n:'Spider Man II',c:'dg'},{n:'Spotify Premium',c:'dg'},
+  {n:'Stanley',c:'afiliados'},{n:'Steam',c:'dg'},{n:'Swift',c:'afiliados'},{n:'Tele Sena',c:'dg'},
+  {n:'Telha Norte',c:'afiliados'},{n:'Tem de tudo',c:'afiliados'},{n:'Temu',c:'afiliados'},{n:'The Body Shop',c:'afiliados'},
+  {n:'TokStok',c:'afiliados'},{n:'TokStok DG',c:'dg'},{n:'Tinder Gold',c:'dg'},{n:'Tinder Plus',c:'dg'},
+  {n:'Tinders',c:'dg'},{n:'Trocafone',c:'afiliados'},{n:'Uber',c:'dg'},{n:'Uber Eats',c:'dg'},
+  {n:'Últimas horas',c:'afiliados'},{n:'Umbro',c:'afiliados'},{n:'Under Armour',c:'afiliados'},{n:'Uol Play',c:'afiliados'},
+  {n:'Vaio',c:'afiliados'},{n:'Valentines Day',c:'afiliados'},{n:'Valorant',c:'dg'},{n:'Verão',c:'afiliados'},
+  {n:'Viagem AB',c:'afiliados'},{n:'Viagens',c:'afiliados'},{n:'Vinho Fácil',c:'afiliados'},{n:'Vitrine SKU',c:'afiliados'},
+  {n:'Vivara',c:'afiliados'},{n:'Voitto',c:'afiliados'},{n:'Volta às Aulas',c:'afiliados'},{n:'Volta Carnaval',c:'afiliados'},
+  {n:'Vult',c:'afiliados'},{n:'Warner',c:'dg'},{n:'Wavee',c:'afiliados'},{n:'Webcontinental',c:'afiliados'},
+  {n:'Webfones',c:'afiliados'},{n:'Wine',c:'afiliados'},{n:'Xbox Game Pass',c:'dg'},{n:'Xbox Game Pass Ultimate',c:'dg'},
+  {n:'Xbox Games',c:'dg'},{n:'Xbox Gift Card',c:'dg'},{n:'Xbox Live Gold',c:'dg'},{n:'Zarpo Viagens',c:'afiliados'},
+  {n:'Zattini',c:'afiliados'},{n:'Zattini',c:'dg'},{n:'Zé Delivery AFI',c:'afiliados'},{n:'Zé Delivery DG',c:'dg'},
+  {n:'Zee Dog',c:'afiliados'},{n:'Zift Card',c:'dg'},{n:'PicDay DG',c:'afiliados'},{n:'PicDay AFI',c:'dg'},
+  {n:'Fut Fanatics',c:'afiliados'},
 ];
 
 // ════ ESTADO ════
@@ -1181,7 +1277,8 @@ function renderMonthGrid(){
         <div class="dcard-cat ${catClass}"><span class="dcard-canal-dot" style="background:${CANAL_COLORS[dp.canal]||'#999'}"></span>${cat}</div>
         <div class="dcard-nome">${nome}</div>
         ${dp.mecanica?`<div class="dcard-mecanica">${dp.mecanica}</div>`:''}
-        ${dp.hora?`<div class="dcard-hora">🕐 ${dp.hora}</div>`:''}        <div class="dcard-ticket ${dp.ticket==='High Ticket'?'high':'low'}">${dp.ticket==='High Ticket'?'▲ High':'▼ Low'}</div>
+        ${dp.hora?`<div class="dcard-hora">🕐 ${dp.hora}</div>`:''}
+        ${dp.ticket?`<div class="dcard-ticket ${dp.ticket==='High Ticket'?'high':'low'}">${dp.ticket==='High Ticket'?'▲ High':'▼ Low'}</div>`:''}
       `;
       dcardsEl.appendChild(card);
     });
@@ -1347,7 +1444,8 @@ function renderWeekCards(key){
     };
     // ordenar por hora se disponível
     const simplified=isSimplifiedProduct();
-    const pub=simplified?(d.perfilBase||''):(Array.isArray(d.publico)?d.publico:[d.publico]).join(', ');
+    const dgafi=isDGAfi();
+    const pub=simplified?(d.perfilBase||''):(Array.isArray(d.publico)?d.publico:[d.publico]).filter(Boolean).join(', ');
     const nome=simplified?(d.nomeAcao||'—'):(d.produto||d.temaLivre||'—');
     const commentKey=key+'|'+idx;
     const commentCount=(state.comentarios[commentKey]||[]).length;
@@ -1361,7 +1459,7 @@ function renderWeekCards(key){
       <button class="wcard-comment-btn${commentCount>0?' has-comments':''}" onclick="openCommentModal('${key}',${idx})" title="Comentários">💬${commentCount>0?` ${commentCount}`:''}</button>
       <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
       <div class="wcard-footer">
-        ${!simplified?`<span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>`:'<span></span>'}
+        ${(!simplified&&!dgafi)?`<span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>`:'<span></span>'}
         <div style="display:flex;align-items:center;gap:3px">
           <button class="wcard-feito-btn${d.disparoFeito?' feito-on':''}" onclick="toggleDisparoFeito('${key}',${idx})" title="${d.disparoFeito?'Disparo feito — clique para desmarcar':'Marcar disparo como feito'}">✓</button>
           <button class="wcard-briefing-btn${d.briefingAberto?' briefing-on':''}" onclick="toggleBriefing('${key}',${idx})" title="${d.briefingAberto?'Briefing aberto — clique para desmarcar':'Marcar briefing como aberto'}">${d.briefingAberto?'📬':'📭'}</button>
@@ -1402,8 +1500,29 @@ function openModal(date,index){
 
   // Mostra campos conforme o produto
   const simplified=isSimplifiedProduct();
-  ['field-produto','field-mecanica','field-publico','field-ticket'].forEach(id=>document.getElementById(id).style.display=simplified?'none':'');
+  const dgafi=isDGAfi();
   ['field-nome-acao','field-perfil-base'].forEach(id=>document.getElementById(id).style.display=simplified?'':'none');
+  ['field-produto','field-mecanica','field-publico'].forEach(id=>document.getElementById(id).style.display=simplified?'none':'');
+  document.getElementById('field-ticket').style.display=(simplified||dgafi)?'none':'';
+  document.getElementById('publico-custom-row').style.display=dgafi?'none':'flex';
+
+  // Mecânica chips — diferentes por produto
+  if(dgafi){
+    document.getElementById('mecanica-presets').innerHTML=
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'Cashback')">Cashback</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'Cupom')">Cupom</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'4X Sem Juros')">4X Sem Juros</div>`;
+  } else {
+    document.getElementById('mecanica-presets').innerHTML=
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'10% de Cashback')">10% Cashback</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'15% de Cashback')">15% Cashback</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'20% de Cashback')">20% Cashback</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'Frete Grátis')">Frete Grátis</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'12x sem juros')">12x sem juros</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'20x sem juros')">20x sem juros</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'10% OFF')">10% OFF</div>`+
+      `<div class="mecanica-chip" onclick="toggleMecanica(this,'Cupom exclusivo')">Cupom exclusivo</div>`;
+  }
 
   if(index!==null&&state.disparos[date]?.[index]){
     const d=state.disparos[date][index];
@@ -1411,14 +1530,18 @@ function openModal(date,index){
       if(d.nomeAcao) document.getElementById('nome-acao-input').value=d.nomeAcao;
       if(d.perfilBase) document.getElementById('perfil-base-input').value=d.perfilBase;
     } else {
-      modalState.selectedPublicos=Array.isArray(d.publico)?[...d.publico]:[d.publico];
+      modalState.selectedPublicos=Array.isArray(d.publico)?[...d.publico]:(d.publico?[d.publico]:[]);
     }
-    modalState.selectedCanal=d.canal;modalState.selectedTicket=d.ticket;
+    modalState.selectedCanal=d.canal;modalState.selectedTicket=d.ticket||null;
     modalState.selectedMecanica=d.mecanica||null;
     if(d.hora) document.getElementById('hora-input').value=d.hora;
     if(d.obs) document.getElementById('obs-input').value=d.obs;
     // produto: define o modo correto ANTES de preencher
-    if(d.produtoId){
+    if(dgafi){
+      setProdutoMode('catalogo');
+      if(d.produto) selectDGAfiProduto(d.produto);
+      else if(d.temaLivre){setProdutoMode('livre');document.getElementById('tema-livre-input').value=d.temaLivre;}
+    } else if(d.produtoId){
       setProdutoMode('catalogo');
       const p=CATALOGO.find(x=>x.id===d.produtoId);if(p)selectProduto(p.id);
     } else if(d.temaLivre){
@@ -1428,7 +1551,7 @@ function openModal(date,index){
       setProdutoMode('catalogo');
     }
     if(d.mecanica){
-      const chip=Array.from(document.querySelectorAll('.mecanica-chip')).find(c=>c.dataset.val===d.mecanica||c.textContent.includes(d.mecanica));
+      const chip=Array.from(document.querySelectorAll('.mecanica-chip')).find(c=>c.dataset.val===d.mecanica||c.textContent===d.mecanica);
       if(chip)chip.classList.add('selected');
       else document.getElementById('mecanica-custom').value=d.mecanica;
     }
@@ -1441,8 +1564,9 @@ function openModal(date,index){
   document.getElementById('ticket-high').className='ticket-option'+(modalState.selectedTicket==='High Ticket'?' selected-high':'');
   document.getElementById('ticket-low').className='ticket-option'+(modalState.selectedTicket==='Low Ticket'?' selected-low':'');
 
+  const publicos=dgafi?['Recompra','Aquisição','Awareness']:PUBLICOS;
   const pg=document.getElementById('publico-grid');pg.innerHTML='';
-  PUBLICOS.forEach(p=>{
+  publicos.forEach(p=>{
     const sel=modalState.selectedPublicos.includes(p);
     const item=document.createElement('div');
     item.className='check-item'+(sel?' selected':'');
@@ -1475,9 +1599,21 @@ function setProdutoMode(mode){
 function filterProducts(){
   const q=document.getElementById('product-search').value.toLowerCase().trim();
   const dd=document.getElementById('product-dropdown');
-  const results=q.length<1?CATALOGO.slice(0,20):CATALOGO.filter(p=>p.nome.toLowerCase().includes(q)||p.marca.toLowerCase().includes(q)||p.categoria.toLowerCase().includes(q));
-  dd.innerHTML=results.length===0?'<div class="pd-item"><span class="pd-meta">Nenhum resultado</span></div>':results.map(p=>`<div class="pd-item" onclick="selectProduto('${p.id}')"><div class="pd-name">${p.nome}</div><div class="pd-meta">${p.marca} · ${p.categoria} · ${p.preco}</div></div>`).join('');
+  if(isDGAfi()){
+    const catalog=CATALOGO_DG_AFI.filter(p=>p.c===currentProduct);
+    const results=q.length<1?catalog.slice(0,25):catalog.filter(p=>p.n.toLowerCase().includes(q));
+    dd.innerHTML=results.length===0?'<div class="pd-item"><span class="pd-meta">Nenhum resultado</span></div>':results.map(p=>`<div class="pd-item" onclick="selectDGAfiProduto(${JSON.stringify(p.n)})"><div class="pd-name">${p.n}</div></div>`).join('');
+  } else {
+    const results=q.length<1?CATALOGO.slice(0,20):CATALOGO.filter(p=>p.nome.toLowerCase().includes(q)||p.marca.toLowerCase().includes(q)||p.categoria.toLowerCase().includes(q));
+    dd.innerHTML=results.length===0?'<div class="pd-item"><span class="pd-meta">Nenhum resultado</span></div>':results.map(p=>`<div class="pd-item" onclick="selectProduto('${p.id}')"><div class="pd-name">${p.nome}</div><div class="pd-meta">${p.marca} · ${p.categoria} · ${p.preco}</div></div>`).join('');
+  }
   dd.classList.add('open');
+}
+function selectDGAfiProduto(nome){
+  modalState.selectedProduto={nome,id:null};
+  document.getElementById('product-search').value=nome;
+  document.getElementById('product-dropdown').classList.remove('open');
+  document.getElementById('selected-produto-display').innerHTML=`<div class="selected-produto"><span>${nome}</span><button onclick="clearProduto()">✕</button></div>`;
 }
 function openDropdown(){filterProducts();document.getElementById('product-dropdown').classList.add('open');}
 function selectProduto(id){
@@ -1495,6 +1631,7 @@ function clearProduto(){
 document.addEventListener('click',function(e){if(!e.target.closest('.product-search-wrap'))document.getElementById('product-dropdown').classList.remove('open');});
 
 function isSimplifiedProduct(){return currentProduct==='mobilidade'||currentProduct==='recarga';}
+function isDGAfi(){return currentProduct==='dg'||currentProduct==='afiliados';}
 
 function saveDisparo(){
   if(!modalState.selectedCanal){showToast('Selecione um canal.');return;}
@@ -1507,6 +1644,12 @@ function saveDisparo(){
     const nomeAcao=document.getElementById('nome-acao-input').value.trim();
     if(!nomeAcao){showToast('Informe o nome da ação.');return;}
     disparo={...base,nomeAcao,perfilBase:document.getElementById('perfil-base-input').value.trim()||null};
+  } else if(isDGAfi()){
+    if(!modalState.selectedPublicos.length){showToast('Selecione ao menos um público.');return;}
+    const tl=document.getElementById('tema-livre-input').value.trim();
+    if(produtoMode==='livre'&&!tl){showToast('Informe o produto/tema.');return;}
+    const mecanica=modalState.selectedMecanica||document.getElementById('mecanica-custom').value.trim()||null;
+    disparo={...base,publico:[...modalState.selectedPublicos],produto:produtoMode==='catalogo'&&modalState.selectedProduto?modalState.selectedProduto.nome:null,temaLivre:produtoMode==='livre'?tl:null,mecanica};
   } else {
     if(!modalState.selectedPublicos.length){showToast('Selecione ao menos um público.');return;}
     if(!modalState.selectedTicket){showToast('Selecione o tipo de ticket.');return;}
