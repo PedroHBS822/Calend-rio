@@ -582,6 +582,9 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .auth-field label{display:block;font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
 .auth-field input,.auth-field select{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.9rem;background:var(--surface2);color:var(--text);transition:border .15s;box-sizing:border-box;}
 .auth-field input:focus,.auth-field select:focus{outline:none;border-color:var(--accent);}
+.pass-wrap{position:relative;}
+.pass-wrap input{padding-right:42px;}
+.pass-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-muted);padding:4px;line-height:1;}
 .auth-tipo-row{display:flex;gap:8px;}
 .auth-tipo-btn{flex:1;padding:10px;border:2px solid var(--border);border-radius:9px;font-size:.85rem;font-weight:700;cursor:pointer;background:var(--surface2);color:var(--text-muted);text-align:center;transition:all .15s;}
 .auth-tipo-btn.selected{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
@@ -636,7 +639,10 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
       </div>
       <div class="auth-field">
         <label>Senha</label>
-        <input type="password" id="login-pass" placeholder="Sua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="pass-wrap">
+          <input type="password" id="login-pass" placeholder="Sua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button type="button" class="pass-eye" onclick="togglePassVis('login-pass',this)" tabindex="-1">👁</button>
+        </div>
       </div>
       <button class="auth-submit" id="btn-do-login" onclick="doLogin()">Entrar</button>
     </div>
@@ -649,7 +655,17 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
       </div>
       <div class="auth-field">
         <label>Senha <span style="font-size:.7rem;color:var(--text-light);text-transform:none">(mín. 6 caracteres)</span></label>
-        <input type="password" id="reg-pass" placeholder="Crie uma senha" autocomplete="new-password">
+        <div class="pass-wrap">
+          <input type="password" id="reg-pass" placeholder="Crie uma senha" autocomplete="new-password">
+          <button type="button" class="pass-eye" onclick="togglePassVis('reg-pass',this)" tabindex="-1">👁</button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Confirmar senha</label>
+        <div class="pass-wrap">
+          <input type="password" id="reg-pass-confirm" placeholder="Repita a senha" autocomplete="new-password">
+          <button type="button" class="pass-eye" onclick="togglePassVis('reg-pass-confirm',this)" tabindex="-1">👁</button>
+        </div>
       </div>
       <div class="auth-field">
         <label>Você é do time de...</label>
@@ -2519,12 +2535,21 @@ async function doLogin(){
   }finally{btn.disabled=false;btn.textContent='Entrar';}
 }
 
+function togglePassVis(inputId, btn){
+  const inp=document.getElementById(inputId);
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.textContent=show?'🙈':'👁';
+}
+
 async function doRegister(){
   const nick=document.getElementById('reg-nick').value.trim();
   const pass=document.getElementById('reg-pass').value;
+  const confirm=document.getElementById('reg-pass-confirm').value;
   if(!nick){setAuthError('Informe um nickname.');return;}
   if(!/^[a-zA-Z0-9_]{3,20}$/.test(nick)){setAuthError('Nickname: 3-20 caracteres, letras, números ou _.');return;}
   if(pass.length<6){setAuthError('Senha deve ter pelo menos 6 caracteres.');return;}
+  if(pass!==confirm){setAuthError('As senhas não coincidem.');return;}
   if(!_selectedTipo){setAuthError('Selecione se você é de Growth ou Comercial.');return;}
   const btn=document.getElementById('btn-do-register');
   btn.disabled=true;btn.textContent='Criando conta...';
