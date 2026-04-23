@@ -20,16 +20,68 @@ const firebaseConfig = {
 };
 
   import { initializeApp }               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, onSnapshot, getDoc }
+  import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, query, where, getDocs, updateDoc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
   let CAL_DOC = doc(db, "calendario", "e2e_crm");
 
   // ── Expõe funções para o código principal ──
   window._fb = {
     setProduct(docId){ CAL_DOC = doc(db, "calendario", docId); },
+
+    // ── Auth ──
+    async register(nickname, password, tipo) {
+      const nicknameLC = nickname.toLowerCase();
+      // Verifica unicidade
+      const q = query(collection(db,'usuarios'), where('nicknameLC','==',nicknameLC));
+      const snap = await getDocs(q);
+      if(!snap.empty) throw new Error('Nickname já está em uso.');
+      const email = nicknameLC + '@calendarioshop.app';
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, {displayName: nickname});
+      const ADMIN = 'parker';
+      const status = nicknameLC === ADMIN ? 'approved' : 'pending';
+      await setDoc(doc(db,'usuarios',cred.user.uid), {
+        nickname, nicknameLC, tipo, status,
+        criadoEm: new Date().toISOString()
+      });
+      return {uid: cred.user.uid, nickname, tipo, status};
+    },
+
+    async login(nickname, password) {
+      const email = nickname.toLowerCase() + '@calendarioshop.app';
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const snap = await getDoc(doc(db,'usuarios',cred.user.uid));
+      if(!snap.exists()) throw new Error('Perfil não encontrado.');
+      return snap.data();
+    },
+
+    async logout() { await signOut(auth); },
+
+    onAuthChange(cb) { return onAuthStateChanged(auth, cb); },
+
+    async getUserProfile(uid) {
+      const snap = await getDoc(doc(db,'usuarios',uid));
+      return snap.exists() ? snap.data() : null;
+    },
+
+    listenPendingUsers(cb) {
+      const q = query(collection(db,'usuarios'), where('status','==','pending'));
+      return onSnapshot(q, snap => cb(snap.docs.map(d => ({uid:d.id,...d.data()}))));
+    },
+
+    async approveUser(uid) {
+      await updateDoc(doc(db,'usuarios',uid), {status:'approved'});
+    },
+
+    async rejectUser(uid) {
+      await updateDoc(doc(db,'usuarios',uid), {status:'rejected'});
+    },
     // Salva todo o state no Firestore
     async save(state) {
       try {
@@ -516,9 +568,130 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--text);border-radius:10px;padding:11px 18px;font-size:.84rem;color:#fff;font-weight:500;box-shadow:var(--shadow-lg);transform:translateY(60px);opacity:0;transition:all .3s;z-index:300;}
 .toast.show{transform:translateY(0);opacity:1;}
+
+/* ════ AUTH ════ */
+#auth-screen,#pending-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+#auth-screen.hidden,#pending-screen.hidden{display:none;}
+.auth-card{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lg);padding:40px 36px;width:100%;max-width:400px;}
+.auth-logo{font-size:1.5rem;font-weight:900;color:var(--accent);margin-bottom:6px;letter-spacing:-.02em;}
+.auth-sub{font-size:.82rem;color:var(--text-muted);margin-bottom:28px;}
+.auth-tabs{display:flex;gap:0;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:24px;}
+.auth-tab{flex:1;padding:8px;text-align:center;font-size:.84rem;font-weight:600;border-radius:7px;cursor:pointer;color:var(--text-muted);transition:all .18s;}
+.auth-tab.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow-sm);}
+.auth-field{margin-bottom:16px;}
+.auth-field label{display:block;font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+.auth-field input,.auth-field select{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.9rem;background:var(--surface2);color:var(--text);transition:border .15s;box-sizing:border-box;}
+.auth-field input:focus,.auth-field select:focus{outline:none;border-color:var(--accent);}
+.auth-tipo-row{display:flex;gap:8px;}
+.auth-tipo-btn{flex:1;padding:10px;border:2px solid var(--border);border-radius:9px;font-size:.85rem;font-weight:700;cursor:pointer;background:var(--surface2);color:var(--text-muted);text-align:center;transition:all .15s;}
+.auth-tipo-btn.selected{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+.auth-submit{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity .15s;}
+.auth-submit:hover{opacity:.88;}
+.auth-submit:disabled{opacity:.5;cursor:not-allowed;}
+.auth-error{color:var(--restrict);font-size:.8rem;margin-top:10px;min-height:20px;text-align:center;}
+.pending-card{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lg);padding:40px 36px;width:100%;max-width:420px;text-align:center;}
+.pending-icon{font-size:3rem;margin-bottom:16px;}
+.pending-title{font-size:1.2rem;font-weight:800;margin-bottom:8px;}
+.pending-msg{font-size:.88rem;color:var(--text-muted);line-height:1.6;margin-bottom:24px;}
+.pending-nick{font-weight:800;color:var(--accent);}
+.btn-logout-pending{background:transparent;border:1.5px solid var(--border);color:var(--text-muted);padding:8px 18px;border-radius:8px;font-size:.82rem;cursor:pointer;}
+/* Approval badge no header */
+#approval-badge-btn{position:relative;background:transparent;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px;display:none;}
+#approval-badge-count{position:absolute;top:0;right:0;min-width:17px;height:17px;border-radius:9px;background:#e03e3e;color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface);}
+/* Logout btn no header */
+#btn-logout{background:transparent;border:1.5px solid var(--border);color:var(--text-muted);padding:5px 13px;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;margin-left:4px;display:none;}
+/* Approval panel */
+#approval-panel{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:900;padding:20px;}
+#approval-panel.open{display:flex;}
+.approval-modal{background:var(--surface);border-radius:16px;box-shadow:var(--shadow-lg);padding:28px;width:100%;max-width:460px;max-height:80vh;overflow-y:auto;}
+.approval-modal h3{font-size:1rem;font-weight:800;margin:0 0 18px;}
+.approval-item{display:flex;align-items:center;gap:12px;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px;}
+.approval-nick{font-weight:700;font-size:.9rem;flex:1;}
+.approval-tipo{font-size:.75rem;color:var(--text-muted);background:var(--bg);padding:2px 8px;border-radius:5px;}
+.approval-btns{display:flex;gap:6px;}
+.btn-approve{background:#21C25E;color:#fff;border:none;border-radius:7px;padding:5px 13px;font-size:.8rem;font-weight:700;cursor:pointer;}
+.btn-reject{background:var(--restrict);color:#fff;border:none;border-radius:7px;padding:5px 13px;font-size:.8rem;font-weight:700;cursor:pointer;}
+.approval-empty{color:var(--text-muted);font-size:.85rem;text-align:center;padding:20px 0;}
+/* user chip no header */
+#user-chip{font-size:.78rem;font-weight:700;color:var(--text-muted);padding:4px 10px;background:var(--bg);border-radius:7px;display:none;}
 </style>
 </head>
 <body>
+
+<!-- ════ TELA DE AUTH ════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">📅 Calendário CRM</div>
+    <div class="auth-sub">Faça login ou crie sua conta</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="auth-tab-login" onclick="authSwitchTab('login')">Entrar</div>
+      <div class="auth-tab" id="auth-tab-register" onclick="authSwitchTab('register')">Criar conta</div>
+    </div>
+
+    <!-- Login -->
+    <div id="auth-login-form">
+      <div class="auth-field">
+        <label>Nickname</label>
+        <input type="text" id="login-nick" placeholder="Seu nickname" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="auth-field">
+        <label>Senha</label>
+        <input type="password" id="login-pass" placeholder="Sua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="auth-submit" id="btn-do-login" onclick="doLogin()">Entrar</button>
+    </div>
+
+    <!-- Cadastro -->
+    <div id="auth-register-form" style="display:none">
+      <div class="auth-field">
+        <label>Nickname</label>
+        <input type="text" id="reg-nick" placeholder="Escolha um nickname único" autocomplete="username">
+      </div>
+      <div class="auth-field">
+        <label>Senha <span style="font-size:.7rem;color:var(--text-light);text-transform:none">(mín. 6 caracteres)</span></label>
+        <input type="password" id="reg-pass" placeholder="Crie uma senha" autocomplete="new-password">
+      </div>
+      <div class="auth-field">
+        <label>Você é do time de...</label>
+        <div class="auth-tipo-row">
+          <div class="auth-tipo-btn" id="tipo-growth" onclick="selectTipo('growth')">📈 Growth</div>
+          <div class="auth-tipo-btn" id="tipo-comercial" onclick="selectTipo('comercial')">💼 Comercial</div>
+        </div>
+      </div>
+      <button class="auth-submit" id="btn-do-register" onclick="doRegister()">Criar conta</button>
+    </div>
+
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- ════ TELA AGUARDANDO APROVAÇÃO ════ -->
+<div id="pending-screen" class="hidden">
+  <div class="pending-card">
+    <div class="pending-icon">⏳</div>
+    <div class="pending-title">Aguardando aprovação</div>
+    <div class="pending-msg">
+      Olá, <span class="pending-nick" id="pending-nick-label"></span>!<br>
+      Sua conta foi criada e está aguardando liberação pelo time de Growth.<br>
+      Assim que aprovada, você conseguirá acessar normalmente.
+    </div>
+    <button class="btn-logout-pending" onclick="doLogout()">Sair</button>
+  </div>
+</div>
+
+<!-- ════ PAINEL DE APROVAÇÕES ════ -->
+<div id="approval-panel">
+  <div class="approval-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h3 style="margin:0">🔔 Solicitações de acesso</h3>
+      <button onclick="closeApprovalPanel()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-muted)">✕</button>
+    </div>
+    <div id="approval-list"></div>
+  </div>
+</div>
+
+<!-- ════ MAIN APP ════ -->
+<div id="main-app" style="display:none">
 
 <!-- ── Tabs ── -->
 <div class="tabs-bar">
@@ -533,6 +706,11 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <button class="tab-btn tab-consolidation" onclick="switchTab(&#39;consolidation&#39;,this)">📊 Consolidação</button>
   <button class="tab-btn" onclick="switchTab(&#39;negociacao&#39;,this)">🤝 Negociação</button>
   <button class="btn-darkmode" id="btn-darkmode" onclick="toggleDarkMode()" title="Alternar modo noturno">🌙</button>
+  <button id="approval-badge-btn" onclick="openApprovalPanel()" title="Solicitações de acesso pendentes">
+    🔔<span id="approval-badge-count">0</span>
+  </button>
+  <span id="user-chip"></span>
+  <button id="btn-logout" onclick="doLogout()">Sair</button>
 </div>
 
 <!-- ── Collab bar ── -->
@@ -2072,27 +2250,6 @@ async function initFirebase() {
   if (!window._fbReady || !window._fb) return;
   applyTheme(PRODUCTS[0]);
   await reloadProduct(true);
-  applyComercialMode();
-}
-
-// Aguarda o Firebase carregar (module async)
-if (window._fbReady) {
-  initFirebase();
-} else {
-  document.addEventListener('firebase-ready', initFirebase);
-  // Fallback: se Firebase não carregar em 3s, carrega localmente
-  setTimeout(() => {
-    if (!window._fbReady) {
-      setSyncStatus('error');
-      applyTheme(PRODUCTS[0]);
-      loadExamples();
-      (function(){const now=new Date();const target=new Date(2026,3,1);monthViewOffset=(target.getFullYear()-now.getFullYear())*12+(target.getMonth()-now.getMonth());})();
-      renderMonthGrid();
-      showToast('⚠ Firebase não conectado — modo offline');
-      applyComercialMode();
-      updateCommentAlert();
-    }
-  }, 3000);
 }
 
 // ════ MODO COMERCIAL ════
@@ -2325,6 +2482,198 @@ function toggleCommentHighlight(){
   _applyHighlight();
 }
 
+// ════ AUTH ════
+const ADMIN_NICK = 'parker';
+let _currentUserProfile = null;
+let _unsubPending = null;
+
+let _selectedTipo = null;
+function selectTipo(t){
+  _selectedTipo=t;
+  document.getElementById('tipo-growth').classList.toggle('selected',t==='growth');
+  document.getElementById('tipo-comercial').classList.toggle('selected',t==='comercial');
+}
+
+function authSwitchTab(tab){
+  document.getElementById('auth-tab-login').classList.toggle('active',tab==='login');
+  document.getElementById('auth-tab-register').classList.toggle('active',tab==='register');
+  document.getElementById('auth-login-form').style.display=tab==='login'?'block':'none';
+  document.getElementById('auth-register-form').style.display=tab==='register'?'block':'none';
+  document.getElementById('auth-error').textContent='';
+}
+
+function setAuthError(msg){ document.getElementById('auth-error').textContent=msg||''; }
+
+async function doLogin(){
+  const nick=document.getElementById('login-nick').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!nick||!pass){setAuthError('Preencha nickname e senha.');return;}
+  const btn=document.getElementById('btn-do-login');
+  btn.disabled=true;btn.textContent='Entrando...';
+  setAuthError('');
+  try{
+    await window._fb.login(nick,pass);
+  }catch(e){
+    const msg=e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'Nickname ou senha incorretos.':e.message;
+    setAuthError(msg);
+  }finally{btn.disabled=false;btn.textContent='Entrar';}
+}
+
+async function doRegister(){
+  const nick=document.getElementById('reg-nick').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  if(!nick){setAuthError('Informe um nickname.');return;}
+  if(!/^[a-zA-Z0-9_]{3,20}$/.test(nick)){setAuthError('Nickname: 3-20 caracteres, letras, números ou _.');return;}
+  if(pass.length<6){setAuthError('Senha deve ter pelo menos 6 caracteres.');return;}
+  if(!_selectedTipo){setAuthError('Selecione se você é de Growth ou Comercial.');return;}
+  const btn=document.getElementById('btn-do-register');
+  btn.disabled=true;btn.textContent='Criando conta...';
+  setAuthError('');
+  try{
+    await window._fb.register(nick,pass,_selectedTipo);
+  }catch(e){
+    setAuthError(e.message||'Erro ao criar conta.');
+  }finally{btn.disabled=false;btn.textContent='Criar conta';}
+}
+
+async function doLogout(){
+  if(_unsubPending){_unsubPending();_unsubPending=null;}
+  await window._fb.logout();
+}
+
+function showAuthScreen(){
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('pending-screen').classList.add('hidden');
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('btn-logout').style.display='none';
+  document.getElementById('user-chip').style.display='none';
+  document.getElementById('approval-badge-btn').style.display='none';
+}
+
+function showPendingScreen(profile){
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('pending-screen').classList.remove('hidden');
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('pending-nick-label').textContent=profile.nickname;
+}
+
+function showMainApp(profile){
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('pending-screen').classList.add('hidden');
+  document.getElementById('main-app').style.display='';
+  const chip=document.getElementById('user-chip');
+  chip.textContent=profile.nickname;
+  chip.style.display='';
+  document.getElementById('btn-logout').style.display='';
+  // Aplica modo comercial se for comercial
+  if(profile.tipo==='comercial') document.body.classList.add('comercial-mode');
+  // Listener de aprovações apenas pra growth
+  if(profile.tipo==='growth'){
+    document.getElementById('approval-badge-btn').style.display='';
+    _unsubPending=window._fb.listenPendingUsers(users=>{
+      const count=users.length;
+      document.getElementById('approval-badge-count').textContent=count;
+      document.getElementById('approval-badge-btn').style.display=count>0?'':'none';
+      renderApprovalList(users);
+    });
+  }
+}
+
+function renderApprovalList(users){
+  const el=document.getElementById('approval-list');
+  if(!el)return;
+  if(users.length===0){el.innerHTML='<div class="approval-empty">Nenhuma solicitação pendente 🎉</div>';return;}
+  el.innerHTML=users.map(u=>`
+    <div class="approval-item" id="aitem-${u.uid}">
+      <div>
+        <div class="approval-nick">${u.nickname}</div>
+        <div class="approval-tipo">${u.tipo==='growth'?'📈 Growth':'💼 Comercial'}</div>
+      </div>
+      <div class="approval-btns">
+        <button class="btn-approve" onclick="approveUser('${u.uid}')">Aprovar</button>
+        <button class="btn-reject" onclick="rejectUser('${u.uid}')">Rejeitar</button>
+      </div>
+    </div>`).join('');
+}
+
+async function approveUser(uid){
+  await window._fb.approveUser(uid);
+  showToast('Usuário aprovado!');
+}
+async function rejectUser(uid){
+  await window._fb.rejectUser(uid);
+  showToast('Acesso negado.');
+}
+function openApprovalPanel(){ document.getElementById('approval-panel').classList.add('open'); }
+function closeApprovalPanel(){ document.getElementById('approval-panel').classList.remove('open'); }
+document.getElementById('approval-panel').addEventListener('click',function(e){if(e.target===this)closeApprovalPanel();});
+
+// ── Auth state listener ──
+function initAuthListener(){
+  if(!window._fb||!window._fb.onAuthChange)return;
+  window._fb.onAuthChange(async user=>{
+    if(!user){
+      _currentUserProfile=null;
+      showAuthScreen();
+      return;
+    }
+    try{
+      const profile=await window._fb.getUserProfile(user.uid);
+      if(!profile){showAuthScreen();return;}
+      _currentUserProfile=profile;
+      if(profile.status==='approved'){
+        showMainApp(profile);
+        // Modo comercial via URL ainda funciona
+        if(IS_COMERCIAL) applyComercialMode();
+        else if(profile.tipo==='comercial'){
+          document.body.classList.add('comercial-mode');
+          document.getElementById('comercial-banner').classList.add('show');
+          document.querySelector('.tab-consolidation').style.display='none';
+          document.querySelector('.collab-bar').style.display='none';
+          document.getElementById('neg-form-section').style.display='block';
+          document.getElementById('neg-list-title').textContent='Suas solicitações';
+        }
+        initFirebase();
+      } else {
+        showPendingScreen(profile);
+        // Escuta mudança de status (quando aprovado, abre o app automaticamente)
+        const unsub=window._fb.onAuthChange(null);
+        window._fb.listenPendingUsers(()=>{});
+        window._fb.getUserProfile(user.uid).then(p=>{
+          if(p&&p.status==='approved'){
+            _currentUserProfile=p;
+            showMainApp(p);
+            if(IS_COMERCIAL||p.tipo==='comercial'){
+              if(IS_COMERCIAL)applyComercialMode();
+              else{document.body.classList.add('comercial-mode');document.getElementById('comercial-banner').classList.add('show');document.querySelector('.tab-consolidation').style.display='none';document.querySelector('.collab-bar').style.display='none';document.getElementById('neg-form-section').style.display='block';document.getElementById('neg-list-title').textContent='Suas solicitações';}
+            }
+            initFirebase();
+          }
+        });
+        // Polling simples para checar aprovação
+        const pollApproval=setInterval(async()=>{
+          const p=await window._fb.getUserProfile(user.uid);
+          if(p&&p.status==='approved'){
+            clearInterval(pollApproval);
+            _currentUserProfile=p;
+            showMainApp(p);
+            if(IS_COMERCIAL)applyComercialMode();
+            else if(p.tipo==='comercial'){document.body.classList.add('comercial-mode');document.getElementById('comercial-banner').classList.add('show');document.querySelector('.tab-consolidation').style.display='none';document.querySelector('.collab-bar').style.display='none';document.getElementById('neg-form-section').style.display='block';document.getElementById('neg-list-title').textContent='Suas solicitações';}
+            initFirebase();
+          }
+        },10000);
+      }
+    }catch(e){console.error(e);showAuthScreen();}
+  });
+}
+
+// Aguarda Firebase e inicializa auth
+if(window._fbReady){
+  initAuthListener();
+}else{
+  document.addEventListener('firebase-ready',initAuthListener);
+}
+
 </script>
 
 
@@ -2332,4 +2681,6 @@ function toggleCommentHighlight(){
   💬
   <span id="comment-alert-count">0</span>
 </button>
+
+</div><!-- /main-app -->
 </body></html>
