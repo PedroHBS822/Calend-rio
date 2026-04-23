@@ -257,6 +257,7 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .collab-sep{width:1px;height:18px;background:var(--border);margin:0 2px;}
 .collab-status{margin-left:auto;font-size:.72rem;color:var(--text-light);font-style:italic;}
 .collab-status span{color:var(--email);font-weight:600;font-style:normal;}
+.app-version-tag{font-size:.68rem;color:var(--text-muted);font-weight:700;opacity:.6;white-space:nowrap;}
 
 /* ── Pages ── */
 .page{display:none;padding:28px;}
@@ -623,8 +624,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .profile-theme-row{display:flex;gap:8px;}
 .theme-btn{flex:1;padding:10px 8px;border:2px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text-muted);text-align:center;transition:all .15s;}
 .theme-btn.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
-.profile-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px;}
-#profile-version{text-align:center;font-size:.72rem;font-weight:700;color:var(--text-muted);letter-spacing:.04em;}
+.profile-footer{padding:16px 20px;border-top:1px solid var(--border);}
 .btn-logout-profile{width:100%;padding:11px;background:transparent;border:1.5px solid var(--border);border-radius:10px;color:var(--restrict);font-size:.88rem;font-weight:700;cursor:pointer;transition:all .15s;}
 .btn-logout-profile:hover{background:rgba(224,62,62,.07);border-color:var(--restrict);}
 /* Online presence */
@@ -838,7 +838,6 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   </div>
   <div class="profile-footer">
     <button class="btn-logout-profile" onclick="doLogout()">↪ Sair da conta</button>
-    <div id="profile-version">v1.1</div>
   </div>
 </div>
 
@@ -859,6 +858,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <div class="collab-sep"></div>
   <button class="btn-collab danger" onclick="confirmClear()">🗑 Limpar</button>
   <div class="collab-status" id="collab-status">Aguardando conexão...</div>
+  <span class="app-version-tag">v1.1</span>
 </div>
 
 <div class="comercial-banner" id="comercial-banner">👁 Modo Visualização — Comercial &nbsp;·&nbsp; Você pode comentar nos disparos e solicitar novos na aba Negociação</div>
