@@ -1624,6 +1624,7 @@ function renderMonthGrid(){
       cell.addEventListener('drop',(e)=>{
         e.preventDefault();
         cell.classList.remove('drag-over');
+        showToast('📥 Drop mensal: ' + (dragSrc.date||'null') + '→' + key);
         if(!dragSrc.date||dragSrc.date===key)return;
         const src=state.disparos[dragSrc.date]||[];
         const dp=src[dragSrc.idx];
@@ -2062,6 +2063,7 @@ function onDragStart(e){
   this.classList.add('dragging');
   e.dataTransfer.effectAllowed='move';
   e.dataTransfer.setData('text/plain', JSON.stringify(dragSrc));
+  showToast('🟢 Drag: ' + dragSrc.date + ' [' + dragSrc.idx + ']');
 }
 
 function onDragEnd(e){
@@ -2083,6 +2085,7 @@ function onDragLeave(e){
 function onDrop(e, destDate){
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
+  showToast('📥 Drop semanal: ' + (dragSrc.date||'null') + '→' + destDate);
 
   if(!dragSrc.date || dragSrc.date===destDate) return; // mesma coluna — ignora
 
