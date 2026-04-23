@@ -517,7 +517,7 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .wcard:hover .wcard-comment-btn{opacity:1;}
 .wcard-comment-btn.has-comments{opacity:1;color:var(--accent);}
 .comercial-mode .wcard-comment-btn{right:6px;}
-.comercial-mode .wcard-del,.comercial-mode .wcard-briefing-btn,.comercial-mode .wcard-feito-btn,.comercial-mode .wbtn-add,.comercial-mode .mcell-add{display:none!important;}
+.comercial-mode .wcard-del,.comercial-mode .wcard-briefing-btn,.comercial-mode .wcard-feito-btn,.comercial-mode .wbtn-add,.comercial-mode .mcell-add,.comercial-mode .cl-add-btn,.comercial-mode .cl-item button{display:none!important;}
 .comercial-mode .wcard{cursor:pointer;}
 .comercial-mode .wcard-comment-btn{display:none!important;}
 
@@ -1566,7 +1566,7 @@ function renderMonthGrid(){
 
     // Campaign toggle (right-click or long press)
     if(d.getMonth()===month){
-      cell.addEventListener('contextmenu',(e)=>{e.preventDefault();toggleDayCampaign(key);});
+      cell.addEventListener('contextmenu',(e)=>{e.preventDefault();if(!IS_COMERCIAL)toggleDayCampaign(key);});
     }
 
     grid.appendChild(cell);
@@ -1598,6 +1598,7 @@ function renderCampaignLegend(){
 }
 
 function openCampaignModal(){
+  if(IS_COMERCIAL)return;
   campaignModalState={editId:null,selectedColor:CAMPAIGN_PALETTE[0]};
   document.getElementById('campaign-modal-title').textContent='Nova Campanha Temática';
   document.getElementById('campaign-name-input').value='';
@@ -1630,6 +1631,7 @@ function saveCampaign(){
 }
 
 function removeCampaign(id){
+  if(IS_COMERCIAL)return;
   state.campaigns=state.campaigns.filter(c=>c.id!==id);
   renderMonthGrid();
   fbSave();
