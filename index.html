@@ -679,7 +679,9 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .approval-modal h3{font-size:1rem;font-weight:800;margin:0 0 18px;}
 .approval-item{display:flex;align-items:center;gap:12px;padding:12px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px;}
 .approval-nick{font-weight:700;font-size:.9rem;flex:1;}
-.approval-tipo{font-size:.75rem;color:var(--text-muted);background:var(--bg);padding:2px 8px;border-radius:5px;}
+.approval-tipo{font-size:.75rem;font-weight:700;padding:3px 9px;border-radius:5px;display:inline-block;}
+.approval-tipo.tipo-growth{color:var(--accent);background:var(--accent-soft);}
+.approval-tipo.tipo-comercial{color:#6c63ff;background:rgba(108,99,255,.1);}
 .approval-btns{display:flex;gap:6px;}
 .btn-approve{background:#21C25E;color:#fff;border:none;border-radius:7px;padding:5px 13px;font-size:.8rem;font-weight:700;cursor:pointer;}
 .btn-reject{background:var(--restrict);color:#fff;border:none;border-radius:7px;padding:5px 13px;font-size:.8rem;font-weight:700;cursor:pointer;}
@@ -2794,7 +2796,7 @@ function renderApprovalList(users){
     <div class="approval-item" id="aitem-${u.uid}">
       <div>
         <div class="approval-nick">${u.nickname}</div>
-        <div class="approval-tipo">${u.tipo==='growth'?'📈 Growth':'💼 Comercial'}</div>
+        <div class="approval-tipo tipo-${u.tipo==='growth'?'growth':'comercial'}">${u.tipo==='growth'?'📈 Growth':'💼 Comercial'}</div>
       </div>
       <div class="approval-btns">
         <button class="btn-approve" onclick="approveUser('${u.uid}')">Aprovar</button>
