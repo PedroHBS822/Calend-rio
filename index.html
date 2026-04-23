@@ -2752,6 +2752,7 @@ async function doRegister(){
 async function doLogout(){
   closeProfilePanel();
   if(_unsubPending){_unsubPending();_unsubPending=null;}
+  if(_fbUnsubscribe){_fbUnsubscribe();_fbUnsubscribe=null;}
   _appInitialized=false;
   await clearPresenceDoc();
   _currentUserProfile=null;
@@ -2765,6 +2766,7 @@ function showAuthScreen(){
   document.getElementById('user-profile-btn').style.display='none';
   document.getElementById('approval-badge-btn').style.display='none';
   document.body.classList.remove('comercial-mode');
+  if(_fbUnsubscribe){_fbUnsubscribe();_fbUnsubscribe=null;}
   closeProfilePanel();
 }
 
