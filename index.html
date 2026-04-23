@@ -2785,15 +2785,12 @@ let _appInitialized=false;
 let _pollApproval=null;
 
 function applyComercialModeForProfile(profile){
-  if(IS_COMERCIAL){applyComercialMode();return;}
-  if(profile.tipo==='comercial'){
-    document.body.classList.add('comercial-mode');
-    document.getElementById('comercial-banner').classList.add('show');
-    document.querySelector('.tab-consolidation').style.display='none';
-    document.querySelector('.collab-bar').style.display='none';
-    document.getElementById('neg-form-section').style.display='block';
-    document.getElementById('neg-list-title').textContent='Suas solicitações';
+  if(profile.tipo==='comercial'&&!IS_COMERCIAL){
+    // Redireciona para a URL correta — IS_COMERCIAL só funciona via parâmetro
+    window.location.replace(window.location.pathname+'?modo=comercial');
+    return;
   }
+  if(IS_COMERCIAL) applyComercialMode();
 }
 
 async function navigateAfterAuth(profile){
