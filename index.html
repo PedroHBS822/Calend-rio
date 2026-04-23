@@ -2780,6 +2780,7 @@ function showMainApp(profile){
   document.getElementById('pending-screen').classList.add('hidden');
   document.getElementById('main-app').style.display='';
   initProfileUI(profile);
+  console.log('[Presence] showMainApp: chamando initPresence', profile?.uid);
   initPresence(profile);
   // Listener de aprovações apenas pra growth
   if(profile.tipo==='growth'){
@@ -2874,12 +2875,16 @@ function navigateToUser(tab){
 }
 
 async function initPresence(profile){
+  console.log('[Presence] initPresence iniciada', profile?.uid);
+  try {
   if(_presenceInterval){clearInterval(_presenceInterval);_presenceInterval=null;}
   if(_unsubPresence){_unsubPresence();_unsubPresence=null;}
   await updatePresenceDoc(_currentTab);
   _unsubPresence = window._fb.listenPresence(users=>renderOnlineUsers(users));
   _presenceInterval = setInterval(()=>updatePresenceDoc(_currentTab), 30000);
   window.addEventListener('beforeunload', ()=>window._fb.clearPresence(profile.uid), {once:true});
+  console.log('[Presence] initPresence concluída');
+  } catch(e) { console.error('[Presence] initPresence erro:', e); }
 }
 
 // Navega para a tela correta após login/cadastro
