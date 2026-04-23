@@ -2082,7 +2082,7 @@ function onDragLeave(e){
 
 function onDrop(e, destDate){
   e.preventDefault();
-  this.classList.remove('drag-over');
+  e.currentTarget.classList.remove('drag-over');
 
   if(!dragSrc.date || dragSrc.date===destDate) return; // mesma coluna — ignora
 
