@@ -412,6 +412,8 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .wcard.dragging,.dcard.dragging{opacity:.35;transform:scale(.97);}
 .week-col.drag-over{background:#eef0ff;border-color:var(--push);box-shadow:0 0 0 2px rgba(108,99,255,.2);}
 .mcell.drag-over{background:var(--accent-soft)!important;border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(26,122,74,.2);}
+/* durante drag, cards filhos não interceptam eventos — deixa chegar na col/cell */
+body.is-dragging .wcard,body.is-dragging .dcard{pointer-events:none;}
 .week-col.drag-over .wcards{outline:2px dashed rgba(108,99,255,.3);outline-offset:2px;border-radius:6px;}
 .drag-ghost{position:fixed;pointer-events:none;opacity:.9;z-index:9999;border-radius:8px;box-shadow:var(--shadow-lg);transform:rotate(2deg);}
 
@@ -1624,7 +1626,6 @@ function renderMonthGrid(){
       cell.addEventListener('drop',(e)=>{
         e.preventDefault();
         cell.classList.remove('drag-over');
-        showToast('📥 Drop mensal: ' + (dragSrc.date||'null') + '→' + key);
         if(!dragSrc.date||dragSrc.date===key)return;
         const src=state.disparos[dragSrc.date]||[];
         const dp=src[dragSrc.idx];
@@ -2061,13 +2062,14 @@ function onDragStart(e){
   dragSrc.date = this.dataset.srcDate;
   dragSrc.idx  = parseInt(this.dataset.srcIdx);
   this.classList.add('dragging');
+  document.body.classList.add('is-dragging');
   e.dataTransfer.effectAllowed='move';
   e.dataTransfer.setData('text/plain', JSON.stringify(dragSrc));
-  showToast('🟢 Drag: ' + dragSrc.date + ' [' + dragSrc.idx + ']');
 }
 
 function onDragEnd(e){
   this.classList.remove('dragging');
+  document.body.classList.remove('is-dragging');
   document.querySelectorAll('.week-col,.mcell').forEach(c=>c.classList.remove('drag-over'));
 }
 
@@ -2085,7 +2087,6 @@ function onDragLeave(e){
 function onDrop(e, destDate){
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  showToast('📥 Drop semanal: ' + (dragSrc.date||'null') + '→' + destDate);
 
   if(!dragSrc.date || dragSrc.date===destDate) return; // mesma coluna — ignora
 
