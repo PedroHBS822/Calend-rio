@@ -50,7 +50,7 @@ const firebaseConfig = {
         nickname, nicknameLC, tipo, status,
         criadoEm: new Date().toISOString()
       });
-      return {uid: cred.user.uid, nickname, tipo, status};
+      return {uid: cred.user.uid, nickname, nicknameLC, tipo, status};
     },
 
     async login(nickname, password) {
@@ -58,7 +58,7 @@ const firebaseConfig = {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const snap = await getDoc(doc(db,'usuarios',cred.user.uid));
       if(!snap.exists()) throw new Error('Perfil não encontrado.');
-      return snap.data();
+      return {uid:cred.user.uid, ...snap.data()};
     },
 
     async logout() { await signOut(auth); },
@@ -2528,7 +2528,9 @@ async function doLogin(){
   btn.disabled=true;btn.textContent='Entrando...';
   setAuthError('');
   try{
-    await window._fb.login(nick,pass);
+    const profile=await window._fb.login(nick,pass);
+    _currentUserProfile=profile;
+    await navigateAfterAuth(profile);
   }catch(e){
     const msg=e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'Nickname ou senha incorretos.':e.message;
     setAuthError(msg);
@@ -2555,7 +2557,9 @@ async function doRegister(){
   btn.disabled=true;btn.textContent='Criando conta...';
   setAuthError('');
   try{
-    await window._fb.register(nick,pass,_selectedTipo);
+    const profile=await window._fb.register(nick,pass,_selectedTipo);
+    _currentUserProfile=profile;
+    await navigateAfterAuth(profile);
   }catch(e){
     setAuthError(e.message||'Erro ao criar conta.');
   }finally{btn.disabled=false;btn.textContent='Criar conta';}
@@ -2633,62 +2637,66 @@ function openApprovalPanel(){ document.getElementById('approval-panel').classLis
 function closeApprovalPanel(){ document.getElementById('approval-panel').classList.remove('open'); }
 document.getElementById('approval-panel').addEventListener('click',function(e){if(e.target===this)closeApprovalPanel();});
 
-// ── Auth state listener ──
+// Navega para a tela correta após login/cadastro
+let _appInitialized=false;
+let _pollApproval=null;
+
+function applyComercialModeForProfile(profile){
+  if(IS_COMERCIAL){applyComercialMode();return;}
+  if(profile.tipo==='comercial'){
+    document.body.classList.add('comercial-mode');
+    document.getElementById('comercial-banner').classList.add('show');
+    document.querySelector('.tab-consolidation').style.display='none';
+    document.querySelector('.collab-bar').style.display='none';
+    document.getElementById('neg-form-section').style.display='block';
+    document.getElementById('neg-list-title').textContent='Suas solicitações';
+  }
+}
+
+async function navigateAfterAuth(profile){
+  if(profile.status==='approved'){
+    showMainApp(profile);
+    applyComercialModeForProfile(profile);
+    if(!_appInitialized){_appInitialized=true;await initFirebase();}
+    if(_pollApproval){clearInterval(_pollApproval);_pollApproval=null;}
+  } else {
+    showPendingScreen(profile);
+    // Polling a cada 8s para detectar aprovação
+    if(_pollApproval) clearInterval(_pollApproval);
+    _pollApproval=setInterval(async()=>{
+      try{
+        const p=await window._fb.getUserProfile(profile.uid);
+        if(p&&p.status==='approved'){
+          clearInterval(_pollApproval);_pollApproval=null;
+          _currentUserProfile=p;
+          showMainApp(p);
+          applyComercialModeForProfile(p);
+          if(!_appInitialized){_appInitialized=true;await initFirebase();}
+        }
+      }catch(e){}
+    },8000);
+  }
+}
+
+// ── Auth state listener — só para persistir sessão ao recarregar página ──
 function initAuthListener(){
   if(!window._fb||!window._fb.onAuthChange)return;
   window._fb.onAuthChange(async user=>{
     if(!user){
       _currentUserProfile=null;
+      _appInitialized=false;
       showAuthScreen();
+      if(_pollApproval){clearInterval(_pollApproval);_pollApproval=null;}
       return;
     }
+    // Se já navegamos via doLogin/doRegister, não repete
+    if(_currentUserProfile) return;
     try{
       const profile=await window._fb.getUserProfile(user.uid);
       if(!profile){showAuthScreen();return;}
       _currentUserProfile=profile;
-      if(profile.status==='approved'){
-        showMainApp(profile);
-        // Modo comercial via URL ainda funciona
-        if(IS_COMERCIAL) applyComercialMode();
-        else if(profile.tipo==='comercial'){
-          document.body.classList.add('comercial-mode');
-          document.getElementById('comercial-banner').classList.add('show');
-          document.querySelector('.tab-consolidation').style.display='none';
-          document.querySelector('.collab-bar').style.display='none';
-          document.getElementById('neg-form-section').style.display='block';
-          document.getElementById('neg-list-title').textContent='Suas solicitações';
-        }
-        initFirebase();
-      } else {
-        showPendingScreen(profile);
-        // Escuta mudança de status (quando aprovado, abre o app automaticamente)
-        const unsub=window._fb.onAuthChange(null);
-        window._fb.listenPendingUsers(()=>{});
-        window._fb.getUserProfile(user.uid).then(p=>{
-          if(p&&p.status==='approved'){
-            _currentUserProfile=p;
-            showMainApp(p);
-            if(IS_COMERCIAL||p.tipo==='comercial'){
-              if(IS_COMERCIAL)applyComercialMode();
-              else{document.body.classList.add('comercial-mode');document.getElementById('comercial-banner').classList.add('show');document.querySelector('.tab-consolidation').style.display='none';document.querySelector('.collab-bar').style.display='none';document.getElementById('neg-form-section').style.display='block';document.getElementById('neg-list-title').textContent='Suas solicitações';}
-            }
-            initFirebase();
-          }
-        });
-        // Polling simples para checar aprovação
-        const pollApproval=setInterval(async()=>{
-          const p=await window._fb.getUserProfile(user.uid);
-          if(p&&p.status==='approved'){
-            clearInterval(pollApproval);
-            _currentUserProfile=p;
-            showMainApp(p);
-            if(IS_COMERCIAL)applyComercialMode();
-            else if(p.tipo==='comercial'){document.body.classList.add('comercial-mode');document.getElementById('comercial-banner').classList.add('show');document.querySelector('.tab-consolidation').style.display='none';document.querySelector('.collab-bar').style.display='none';document.getElementById('neg-form-section').style.display='block';document.getElementById('neg-list-title').textContent='Suas solicitações';}
-            initFirebase();
-          }
-        },10000);
-      }
-    }catch(e){console.error(e);showAuthScreen();}
+      await navigateAfterAuth(profile);
+    }catch(e){console.error('Auth error:',e);showAuthScreen();}
   });
 }
 
