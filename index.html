@@ -855,7 +855,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <div class="collab-sep"></div>
   <button class="btn-collab danger" onclick="confirmClear()">🗑 Limpar</button>
   <div class="collab-status" id="collab-status">Aguardando conexão...</div>
-  <span class="app-version-tag">v1.1</span>
+  <span class="app-version-tag">v1.4</span>
 </div>
 
 <div class="comercial-banner" id="comercial-banner">👁 Modo Visualização — Comercial &nbsp;·&nbsp; Você pode comentar nos disparos e solicitar novos na aba Negociação</div>
@@ -2183,7 +2183,7 @@ function changeConsolMonth(d){consolOffset+=d;renderConsolidation();}
 
 // ════ COLABORAÇÃO JSON ════
 const JSON_VERSION='1.1';
-const APP_VERSION='1.0';
+const APP_VERSION='1.4';
 function buildExportPayload(){return{version:JSON_VERSION,exportedAt:new Date().toISOString(),disparos:state.disparos,campaigns:state.campaigns,motesCustom:state.motesCustom};}
 function countDisparos(d){return Object.values(d).reduce((a,arr)=>a+arr.length,0);}
 function setCollabStatus(msg,hi){const el=document.getElementById('collab-status');el.innerHTML=hi?`<span>${msg}</span>`:msg;}
