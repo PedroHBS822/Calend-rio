@@ -75,7 +75,9 @@ const firebaseConfig = {
     },
 
     async updatePresence(uid, data) {
-      await setDoc(doc(db,'presenca',uid), {ts: new Date().toISOString(), ...data}, {merge:true});
+      try {
+        await setDoc(doc(db,'presenca',uid), {ts: new Date().toISOString(), ...data}, {merge:true});
+      } catch(e) { console.error('updatePresence error:', e.code, e.message); }
     },
 
     async clearPresence(uid) {
@@ -85,7 +87,7 @@ const firebaseConfig = {
     listenPresence(cb) {
       return onSnapshot(collection(db,'presenca'),
         snap => cb(snap.docs.map(d => ({uid:d.id,...d.data()}))),
-        err => cb([])
+        err => { console.error('listenPresence error:', err.code, err.message); cb([]); }
       );
     },
 
@@ -2865,12 +2867,12 @@ function navigateToUser(tab){
   if(tabBtn) tabBtn.click();
 }
 
-function initPresence(profile){
+async function initPresence(profile){
   if(_presenceInterval){clearInterval(_presenceInterval);_presenceInterval=null;}
   if(_unsubPresence){_unsubPresence();_unsubPresence=null;}
-  updatePresenceDoc(_currentTab);
-  _presenceInterval = setInterval(()=>updatePresenceDoc(_currentTab), 30000);
+  await updatePresenceDoc(_currentTab);
   _unsubPresence = window._fb.listenPresence(users=>renderOnlineUsers(users));
+  _presenceInterval = setInterval(()=>updatePresenceDoc(_currentTab), 30000);
   window.addEventListener('beforeunload', ()=>window._fb.clearPresence(profile.uid), {once:true});
 }
 
