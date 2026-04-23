@@ -186,8 +186,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 .tab-btn{padding:14px 20px 12px;font-size:.87rem;font-weight:600;color:var(--text-muted);background:transparent;border:none;border-bottom:3px solid transparent;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;}
 .tab-btn:hover{color:var(--text);}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
-.btn-darkmode{margin-left:auto;margin-right:4px;width:34px;height:34px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;align-self:center;transition:all .2s;flex-shrink:0;}
-.btn-darkmode:hover{border-color:var(--accent);background:var(--accent-soft);}
+.btn-darkmode{display:none;}
 
 /* ── Dark mode ── */
 body.dark{
@@ -606,9 +605,10 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .btn-logout-profile{width:100%;padding:11px;background:transparent;border:1.5px solid var(--border);border-radius:10px;color:var(--restrict);font-size:.88rem;font-weight:700;cursor:pointer;transition:all .15s;}
 .btn-logout-profile:hover{background:rgba(224,62,62,.07);border-color:var(--restrict);}
 /* user-profile-btn no header */
-#user-profile-btn{display:none;align-items:center;gap:6px;background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);transition:background .15s;margin-left:4px;}
+#user-profile-btn{display:none;align-items:center;gap:7px;background:var(--bg);border:1.5px solid var(--border);border-radius:999px;padding:4px 14px 4px 4px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);transition:background .15s;margin-left:auto;}
 #user-profile-btn:hover{background:var(--accent-soft);}
-#user-avatar-display{font-size:1.1rem;line-height:1;}
+#user-avatar-display{width:28px;height:28px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;border:1.5px solid var(--accent);}
+
 
 /* ════ AUTH ════ */
 #auth-screen,#pending-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
@@ -640,8 +640,9 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .pending-nick{font-weight:800;color:var(--accent);}
 .btn-logout-pending{background:transparent;border:1.5px solid var(--border);color:var(--text-muted);padding:8px 18px;border-radius:8px;font-size:.82rem;cursor:pointer;}
 /* Approval badge no header */
-#approval-badge-btn{position:relative;background:transparent;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px;display:none;}
-#approval-badge-count{position:absolute;top:0;right:0;min-width:17px;height:17px;border-radius:9px;background:#e03e3e;color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface);}
+#approval-badge-btn{position:fixed;bottom:28px;left:28px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:1.5rem;display:none;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.22);z-index:200;transition:transform .15s,box-shadow .15s;padding:0;}
+#approval-badge-btn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,0,0,.28);}
+#approval-badge-count{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:#e03e3e;color:#fff;font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--surface);line-height:1;}
 /* Logout btn no header */
 #btn-logout{background:transparent;border:1.5px solid var(--border);color:var(--text-muted);padding:5px 13px;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;margin-left:4px;display:none;}
 /* Approval panel */
@@ -762,10 +763,6 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <button class="tab-btn" onclick="switchTab(&#39;weekly&#39;,this)">📅 Semanal</button>
   <button class="tab-btn tab-consolidation" onclick="switchTab(&#39;consolidation&#39;,this)">📊 Consolidação</button>
   <button class="tab-btn" onclick="switchTab(&#39;negociacao&#39;,this)">🤝 Negociação</button>
-  <button class="btn-darkmode" id="btn-darkmode" onclick="toggleDarkMode()" title="Alternar modo noturno">🌙</button>
-  <button id="approval-badge-btn" onclick="openApprovalPanel()" title="Solicitações de acesso pendentes">
-    🔔<span id="approval-badge-count">0</span>
-  </button>
   <button id="user-profile-btn" onclick="openProfilePanel()">
     <span id="user-avatar-display">👤</span>
     <span id="user-nick-display"></span>
@@ -2739,12 +2736,12 @@ function showMainApp(profile){
   initProfileUI(profile);
   // Listener de aprovações apenas pra growth
   if(profile.tipo==='growth'){
-    document.getElementById('approval-badge-btn').style.display='inline-flex';
+    document.getElementById('approval-badge-btn').style.display='flex';
     if(!_unsubPending){
       _unsubPending=window._fb.listenPendingUsers(users=>{
         const count=users.length;
         document.getElementById('approval-badge-count').textContent=count||'';
-        document.getElementById('approval-badge-btn').style.display='inline-flex';
+        document.getElementById('approval-badge-btn').style.display='flex';
         renderApprovalList(users);
       });
     }
@@ -2853,6 +2850,10 @@ if(window._fbReady){
 <button id="comment-alert-btn" onclick="toggleCommentHighlight()" title="Ver cards com comentários" style="position:fixed">
   💬
   <span id="comment-alert-count">0</span>
+</button>
+<button id="approval-badge-btn" onclick="openApprovalPanel()" title="Solicitações de acesso pendentes" style="position:fixed">
+  🔔
+  <span id="approval-badge-count">0</span>
 </button>
 
 </div><!-- /main-app -->
