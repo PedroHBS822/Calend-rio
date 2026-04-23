@@ -838,7 +838,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   </div>
   <div class="profile-footer">
     <button class="btn-logout-profile" onclick="doLogout()">↪ Sair da conta</button>
-    <div id="profile-version"></div>
+    <div id="profile-version">v1.1</div>
   </div>
 </div>
 
@@ -2735,8 +2735,7 @@ function openProfilePanel(){
   document.getElementById('theme-btn-dark').classList.toggle('active', isDark);
   document.getElementById('theme-btn-light').classList.toggle('active', !isDark);
   buildAvatarGrid();
-  document.getElementById('profile-version').textContent='v' + APP_VERSION;
-  document.getElementById('profile-panel').classList.add('open');
+document.getElementById('profile-panel').classList.add('open');
   document.getElementById('profile-overlay').classList.add('open');
 }
 
