@@ -37,12 +37,16 @@ const firebaseConfig = {
     // ── Auth ──
     async register(nickname, password, tipo) {
       const nicknameLC = nickname.toLowerCase();
-      // Verifica unicidade
-      const q = query(collection(db,'usuarios'), where('nicknameLC','==',nicknameLC));
-      const snap = await getDocs(q);
-      if(!snap.empty) throw new Error('Nickname já está em uso.');
       const email = nicknameLC + '@calendarioshop.app';
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      // Cria no Firebase Auth primeiro (já faz login automático)
+      let cred;
+      try {
+        cred = await createUserWithEmailAndPassword(auth, email, password);
+      } catch(e) {
+        if(e.code === 'auth/email-already-in-use') throw new Error('Nickname já está em uso.');
+        throw e;
+      }
+      // Agora autenticado — salva perfil no Firestore
       await updateProfile(cred.user, {displayName: nickname});
       const ADMIN = 'parker';
       const status = nicknameLC === ADMIN ? 'approved' : 'pending';
