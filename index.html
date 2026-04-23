@@ -20,7 +20,7 @@ const firebaseConfig = {
 };
 
   import { initializeApp }               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, query, where, getDocs, updateDoc }
+  import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, getDoc, collection, query, where, getDocs, updateDoc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -71,7 +71,22 @@ const firebaseConfig = {
 
     async getUserProfile(uid) {
       const snap = await getDoc(doc(db,'usuarios',uid));
-      return snap.exists() ? snap.data() : null;
+      return snap.exists() ? {uid, ...snap.data()} : null;
+    },
+
+    async updatePresence(uid, data) {
+      await setDoc(doc(db,'presenca',uid), {ts: new Date().toISOString(), ...data}, {merge:true});
+    },
+
+    async clearPresence(uid) {
+      try { await deleteDoc(doc(db,'presenca',uid)); } catch(e) {}
+    },
+
+    listenPresence(cb) {
+      return onSnapshot(collection(db,'presenca'),
+        snap => cb(snap.docs.map(d => ({uid:d.id,...d.data()}))),
+        err => cb([])
+      );
     },
 
     listenPendingUsers(cb) {
@@ -604,8 +619,20 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .profile-footer{padding:16px 20px;border-top:1px solid var(--border);}
 .btn-logout-profile{width:100%;padding:11px;background:transparent;border:1.5px solid var(--border);border-radius:10px;color:var(--restrict);font-size:.88rem;font-weight:700;cursor:pointer;transition:all .15s;}
 .btn-logout-profile:hover{background:rgba(224,62,62,.07);border-color:var(--restrict);}
+/* Online presence */
+#online-presence-area{margin-left:auto;display:flex;align-items:center;gap:10px;padding-right:2px;}
+#online-users{display:flex;align-items:center;}
+.online-av{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);border:2.5px solid var(--surface);font-size:1.05rem;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;margin-left:-8px;transition:transform .15s,z-index 0s;flex-shrink:0;z-index:1;}
+.online-av:first-child{margin-left:0;}
+.online-av:hover{transform:scale(1.18);z-index:10;}
+.online-av-tip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:.72rem;font-weight:700;padding:4px 9px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;}
+.online-av-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--text);}
+.online-av:hover .online-av-tip{opacity:1;}
+.online-av.is-me{border-color:var(--accent);}
+.online-overflow{width:32px;height:32px;border-radius:50%;background:var(--surface2);border:2.5px solid var(--surface);font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;color:var(--text-muted);margin-left:-8px;flex-shrink:0;}
+
 /* user-profile-btn no header */
-#user-profile-btn{display:none;align-items:center;gap:7px;background:var(--bg);border:1.5px solid var(--border);border-radius:999px;padding:4px 14px 4px 4px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);transition:background .15s;margin-left:auto;}
+#user-profile-btn{display:none;align-items:center;gap:7px;background:var(--bg);border:1.5px solid var(--border);border-radius:999px;padding:4px 14px 4px 4px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);transition:background .15s;}
 #user-profile-btn:hover{background:var(--accent-soft);}
 #user-avatar-display{width:28px;height:28px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;border:1.5px solid var(--accent);}
 
@@ -763,10 +790,13 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <button class="tab-btn" onclick="switchTab(&#39;weekly&#39;,this)">📅 Semanal</button>
   <button class="tab-btn tab-consolidation" onclick="switchTab(&#39;consolidation&#39;,this)">📊 Consolidação</button>
   <button class="tab-btn" onclick="switchTab(&#39;negociacao&#39;,this)">🤝 Negociação</button>
-  <button id="user-profile-btn" onclick="openProfilePanel()">
-    <span id="user-avatar-display">👤</span>
-    <span id="user-nick-display"></span>
-  </button>
+  <div id="online-presence-area">
+    <div id="online-users"></div>
+    <button id="user-profile-btn" onclick="openProfilePanel()">
+      <span id="user-avatar-display">👤</span>
+      <span id="user-nick-display"></span>
+    </button>
+  </div>
 </div>
 
 <!-- ════ PAINEL DE PERFIL ════ -->
@@ -1443,7 +1473,10 @@ function editMote(el, dow){
 }
 
 // ════ TABS ════
+let _currentTab = 'monthly';
+
 function switchTab(tab,btn){
+  _currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
@@ -1452,6 +1485,7 @@ function switchTab(tab,btn){
   if(tab==='weekly') buildWeekCalendar();
   if(tab==='consolidation') renderConsolidation();
   if(tab==='negociacao') buildNegociacaoPage();
+  updatePresenceDoc(tab);
 }
 
 // ════ MONTHLY GRID ════
@@ -2711,6 +2745,7 @@ async function doLogout(){
   closeProfilePanel();
   if(_unsubPending){_unsubPending();_unsubPending=null;}
   _appInitialized=false;
+  await clearPresenceDoc();
   _currentUserProfile=null;
   await window._fb.logout();
 }
@@ -2736,6 +2771,7 @@ function showMainApp(profile){
   document.getElementById('pending-screen').classList.add('hidden');
   document.getElementById('main-app').style.display='';
   initProfileUI(profile);
+  initPresence(profile);
   // Listener de aprovações apenas pra growth
   if(profile.tipo==='growth'){
     document.getElementById('approval-badge-btn').style.display='flex';
@@ -2778,6 +2814,58 @@ async function rejectUser(uid){
 function openApprovalPanel(){ document.getElementById('approval-panel').classList.add('open'); }
 function closeApprovalPanel(){ document.getElementById('approval-panel').classList.remove('open'); }
 document.getElementById('approval-panel').addEventListener('click',function(e){if(e.target===this)closeApprovalPanel();});
+
+// ════ PRESENÇA ONLINE ════
+let _presenceInterval = null;
+let _unsubPresence = null;
+
+async function updatePresenceDoc(tab){
+  if(!_currentUserProfile?.uid) return;
+  const {uid, nickname, avatar} = _currentUserProfile;
+  await window._fb.updatePresence(uid, {nickname, avatar: avatar||'👤', tab: tab||_currentTab});
+}
+
+async function clearPresenceDoc(){
+  if(!_currentUserProfile?.uid) return;
+  await window._fb.clearPresence(_currentUserProfile.uid);
+  if(_presenceInterval){clearInterval(_presenceInterval);_presenceInterval=null;}
+  if(_unsubPresence){_unsubPresence();_unsubPresence=null;}
+}
+
+function renderOnlineUsers(users){
+  const el = document.getElementById('online-users');
+  if(!el) return;
+  const now = Date.now();
+  const active = users.filter(u => u.ts && (now - new Date(u.ts).getTime()) < 90000);
+  if(active.length === 0){ el.innerHTML=''; return; }
+  const MAX = 5;
+  const visible = active.slice(0, MAX);
+  const overflow = active.length - MAX;
+  const myUid = _currentUserProfile?.uid;
+  const TAB_LABELS = {monthly:'Mensal',weekly:'Semanal',consolidation:'Consolidação',negociacao:'Negociação'};
+  el.innerHTML = visible.map(u => {
+    const isMe = u.uid === myUid;
+    const tabLabel = TAB_LABELS[u.tab] || '';
+    const tip = u.nickname + (tabLabel ? ' · '+tabLabel : '');
+    return `<div class="online-av${isMe?' is-me':''}" onclick="navigateToUser('${u.tab||''}')" title="">` +
+      `${u.avatar||'👤'}<span class="online-av-tip">${tip}</span></div>`;
+  }).join('') + (overflow > 0 ? `<div class="online-overflow">+${overflow}</div>` : '');
+}
+
+function navigateToUser(tab){
+  if(!tab) return;
+  const tabBtn = document.querySelector(`.tab-btn[onclick*="'${tab}'"]`);
+  if(tabBtn) tabBtn.click();
+}
+
+function initPresence(profile){
+  if(_presenceInterval){clearInterval(_presenceInterval);_presenceInterval=null;}
+  if(_unsubPresence){_unsubPresence();_unsubPresence=null;}
+  updatePresenceDoc(_currentTab);
+  _presenceInterval = setInterval(()=>updatePresenceDoc(_currentTab), 30000);
+  _unsubPresence = window._fb.listenPresence(users=>renderOnlineUsers(users));
+  window.addEventListener('beforeunload', ()=>window._fb.clearPresence(profile.uid), {once:true});
+}
 
 // Navega para a tela correta após login/cadastro
 let _appInitialized=false;
