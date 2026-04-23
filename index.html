@@ -739,7 +739,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
       <div class="auth-field">
         <label>Você é do time de...</label>
         <div class="auth-tipo-row">
-          <div class="auth-tipo-btn" id="tipo-growth" onclick="selectTipo('growth')">📈 Growth</div>
+          <div class="auth-tipo-btn selected" id="tipo-growth" onclick="selectTipo('growth')">📈 Growth</div>
           <div class="auth-tipo-btn" id="tipo-comercial" onclick="selectTipo('comercial')">💼 Comercial</div>
         </div>
       </div>
@@ -2679,7 +2679,7 @@ const ADMIN_NICK = 'parker';
 let _currentUserProfile = null;
 let _unsubPending = null;
 
-let _selectedTipo = null;
+let _selectedTipo = 'growth';
 function selectTipo(t){
   _selectedTipo=t;
   document.getElementById('tipo-growth').classList.toggle('selected',t==='growth');
@@ -2873,8 +2873,11 @@ let _pollApproval=null;
 
 function applyComercialModeForProfile(profile){
   if(profile.tipo==='comercial'&&!IS_COMERCIAL){
-    // Redireciona para a URL correta — IS_COMERCIAL só funciona via parâmetro
     window.location.replace(window.location.pathname+'?modo=comercial');
+    return;
+  }
+  if(profile.tipo==='growth'&&IS_COMERCIAL){
+    window.location.replace(window.location.pathname);
     return;
   }
   if(IS_COMERCIAL) applyComercialMode();
