@@ -82,6 +82,10 @@ const firebaseConfig = {
     async rejectUser(uid) {
       await updateDoc(doc(db,'usuarios',uid), {status:'rejected'});
     },
+
+    async updateUserProfile(uid, data) {
+      await updateDoc(doc(db,'usuarios',uid), data);
+    },
     // Salva todo o state no Firestore
     async save(state) {
       try {
@@ -569,6 +573,36 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--text);border-radius:10px;padding:11px 18px;font-size:.84rem;color:#fff;font-weight:500;box-shadow:var(--shadow-lg);transform:translateY(60px);opacity:0;transition:all .3s;z-index:300;}
 .toast.show{transform:translateY(0);opacity:1;}
 
+/* ════ PERFIL ════ */
+#profile-panel{position:fixed;top:0;right:0;height:100%;width:300px;background:var(--surface);box-shadow:-4px 0 32px rgba(0,0,0,.15);z-index:800;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;}
+#profile-panel.open{transform:translateX(0);}
+#profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:799;display:none;}
+#profile-overlay.open{display:block;}
+.profile-header{padding:24px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.profile-header h3{margin:0;font-size:.95rem;font-weight:800;}
+.profile-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-muted);padding:4px;}
+.profile-body{flex:1;overflow-y:auto;padding:20px;}
+.profile-avatar-big{text-align:center;margin-bottom:20px;}
+.profile-avatar-circle{width:72px;height:72px;border-radius:50%;background:var(--accent-soft);display:inline-flex;align-items:center;justify-content:center;font-size:2.2rem;margin-bottom:8px;border:2.5px solid var(--accent);}
+.profile-nickname{font-weight:800;font-size:1rem;}
+.profile-tipo{font-size:.75rem;color:var(--text-muted);margin-top:2px;}
+.profile-section{margin-bottom:22px;}
+.profile-section-label{font-size:.72rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.avatar-opt{width:100%;aspect-ratio:1;border-radius:10px;border:2px solid transparent;background:var(--bg);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.avatar-opt:hover{background:var(--accent-soft);border-color:var(--accent);}
+.avatar-opt.selected{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent);}
+.profile-theme-row{display:flex;gap:8px;}
+.theme-btn{flex:1;padding:10px 8px;border:2px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text-muted);text-align:center;transition:all .15s;}
+.theme-btn.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+.profile-footer{padding:16px 20px;border-top:1px solid var(--border);}
+.btn-logout-profile{width:100%;padding:11px;background:transparent;border:1.5px solid var(--border);border-radius:10px;color:var(--restrict);font-size:.88rem;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn-logout-profile:hover{background:rgba(224,62,62,.07);border-color:var(--restrict);}
+/* user-profile-btn no header */
+#user-profile-btn{display:none;align-items:center;gap:6px;background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);transition:background .15s;margin-left:4px;}
+#user-profile-btn:hover{background:var(--accent-soft);}
+#user-avatar-display{font-size:1.1rem;line-height:1;}
+
 /* ════ AUTH ════ */
 #auth-screen,#pending-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
 #auth-screen.hidden,#pending-screen.hidden{display:none;}
@@ -725,8 +759,42 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <button id="approval-badge-btn" onclick="openApprovalPanel()" title="Solicitações de acesso pendentes">
     🔔<span id="approval-badge-count">0</span>
   </button>
-  <span id="user-chip"></span>
-  <button id="btn-logout" onclick="doLogout()">Sair</button>
+  <button id="user-profile-btn" onclick="openProfilePanel()">
+    <span id="user-avatar-display">👤</span>
+    <span id="user-nick-display"></span>
+  </button>
+</div>
+
+<!-- ════ PAINEL DE PERFIL ════ -->
+<div id="profile-overlay" onclick="closeProfilePanel()"></div>
+<div id="profile-panel">
+  <div class="profile-header">
+    <h3>Meu Perfil</h3>
+    <button class="profile-close" onclick="closeProfilePanel()">✕</button>
+  </div>
+  <div class="profile-body">
+    <div class="profile-avatar-big">
+      <div class="profile-avatar-circle" id="profile-avatar-preview">👤</div>
+      <div class="profile-nickname" id="profile-nickname-display"></div>
+      <div class="profile-tipo" id="profile-tipo-display"></div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-label">Avatar</div>
+      <div class="avatar-grid" id="avatar-grid"></div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-label">Tema</div>
+      <div class="profile-theme-row">
+        <div class="theme-btn" id="theme-btn-light" onclick="setThemeMode('light')">☀️ Claro</div>
+        <div class="theme-btn" id="theme-btn-dark" onclick="setThemeMode('dark')">🌙 Escuro</div>
+      </div>
+    </div>
+  </div>
+  <div class="profile-footer">
+    <button class="btn-logout-profile" onclick="doLogout()">↪ Sair da conta</button>
+  </div>
 </div>
 
 <!-- ── Collab bar ── -->
@@ -2498,6 +2566,74 @@ function toggleCommentHighlight(){
   _applyHighlight();
 }
 
+// ════ PERFIL ════
+const AVATARS = ['🦊','🐼','🦁','🐯','🐺','🐻','🦅','🐧','🐸','🦄','🐬','🦋','🚀','⚡','🎯','🔥','🌊','🎸','🎭','🌙'];
+let _selectedAvatar = '👤';
+
+function buildAvatarGrid(){
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = AVATARS.map(a =>
+    `<div class="avatar-opt${a===_selectedAvatar?' selected':''}" onclick="selectAvatar('${a}')">${a}</div>`
+  ).join('');
+}
+
+function selectAvatar(avatar){
+  _selectedAvatar = avatar;
+  document.querySelectorAll('.avatar-opt').forEach(el => el.classList.toggle('selected', el.textContent===avatar));
+  document.getElementById('profile-avatar-preview').textContent = avatar;
+  document.getElementById('user-avatar-display').textContent = avatar;
+  // Salva no Firestore
+  if(_currentUserProfile?.uid) window._fb.updateUserProfile(_currentUserProfile.uid, {avatar});
+  _currentUserProfile = {..._currentUserProfile, avatar};
+}
+
+function setThemeMode(mode){
+  if(mode==='dark'){
+    document.body.classList.add('dark');
+    document.getElementById('theme-btn-dark').classList.add('active');
+    document.getElementById('theme-btn-light').classList.remove('active');
+  } else {
+    document.body.classList.remove('dark');
+    document.getElementById('theme-btn-light').classList.add('active');
+    document.getElementById('theme-btn-dark').classList.remove('active');
+  }
+  if(_currentUserProfile) applyTheme(PRODUCTS.find(p=>p.id===currentProduct)||PRODUCTS[0]);
+  // Salva preferência
+  if(_currentUserProfile?.uid) window._fb.updateUserProfile(_currentUserProfile.uid, {tema: mode});
+  _currentUserProfile = {..._currentUserProfile, tema: mode};
+}
+
+function openProfilePanel(){
+  const isDark = document.body.classList.contains('dark');
+  document.getElementById('theme-btn-dark').classList.toggle('active', isDark);
+  document.getElementById('theme-btn-light').classList.toggle('active', !isDark);
+  buildAvatarGrid();
+  document.getElementById('profile-panel').classList.add('open');
+  document.getElementById('profile-overlay').classList.add('open');
+}
+
+function closeProfilePanel(){
+  document.getElementById('profile-panel').classList.remove('open');
+  document.getElementById('profile-overlay').classList.remove('open');
+}
+
+function initProfileUI(profile){
+  const avatar = profile.avatar || '👤';
+  _selectedAvatar = avatar;
+  document.getElementById('user-avatar-display').textContent = avatar;
+  document.getElementById('user-nick-display').textContent = profile.nickname || '';
+  document.getElementById('user-profile-btn').style.display = 'flex';
+  document.getElementById('profile-avatar-preview').textContent = avatar;
+  document.getElementById('profile-nickname-display').textContent = profile.nickname || '';
+  document.getElementById('profile-tipo-display').textContent = profile.tipo === 'growth' ? '📈 Growth' : '💼 Comercial';
+  // Aplica tema salvo
+  if(profile.tema === 'dark' && !document.body.classList.contains('dark')){
+    document.body.classList.add('dark');
+  } else if(profile.tema === 'light' && document.body.classList.contains('dark')){
+    document.body.classList.remove('dark');
+  }
+}
+
 // ════ AUTH ════
 const ADMIN_NICK = 'parker';
 let _currentUserProfile = null;
@@ -2566,7 +2702,10 @@ async function doRegister(){
 }
 
 async function doLogout(){
+  closeProfilePanel();
   if(_unsubPending){_unsubPending();_unsubPending=null;}
+  _appInitialized=false;
+  _currentUserProfile=null;
   await window._fb.logout();
 }
 
@@ -2574,9 +2713,9 @@ function showAuthScreen(){
   document.getElementById('auth-screen').classList.remove('hidden');
   document.getElementById('pending-screen').classList.add('hidden');
   document.getElementById('main-app').style.display='none';
-  document.getElementById('btn-logout').style.display='none';
-  document.getElementById('user-chip').style.display='none';
+  document.getElementById('user-profile-btn').style.display='none';
   document.getElementById('approval-badge-btn').style.display='none';
+  closeProfilePanel();
 }
 
 function showPendingScreen(profile){
@@ -2590,15 +2729,9 @@ function showMainApp(profile){
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('pending-screen').classList.add('hidden');
   document.getElementById('main-app').style.display='';
-  const chip=document.getElementById('user-chip');
-  chip.textContent=profile.nickname;
-  chip.style.display='';
-  document.getElementById('btn-logout').style.display='';
-  // Aplica modo comercial se for comercial
-  if(profile.tipo==='comercial') document.body.classList.add('comercial-mode');
+  initProfileUI(profile);
   // Listener de aprovações apenas pra growth
-  if(profile.tipo==='growth'){
-    document.getElementById('approval-badge-btn').style.display='';
+  if(profile.tipo==='growth'&&!_unsubPending){
     _unsubPending=window._fb.listenPendingUsers(users=>{
       const count=users.length;
       document.getElementById('approval-badge-count').textContent=count;
