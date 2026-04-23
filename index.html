@@ -1584,6 +1584,30 @@ function renderMonthGrid(){
         card.dataset.srcIdx=idx;
         card.addEventListener('dragstart',onDragStart);
         card.addEventListener('dragend',onDragEnd);
+        card.addEventListener('dragover',(e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          e.dataTransfer.dropEffect='move';
+          cell.classList.add('drag-over');
+        });
+        card.addEventListener('drop',(e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          cell.classList.remove('drag-over');
+          if(!dragSrc.date||dragSrc.date===key)return;
+          const src=state.disparos[dragSrc.date]||[];
+          const dp=src[dragSrc.idx];
+          if(!dp)return;
+          src.splice(dragSrc.idx,1);
+          if(!src.length)delete state.disparos[dragSrc.date];
+          else state.disparos[dragSrc.date]=src;
+          if(!state.disparos[key])state.disparos[key]=[];
+          state.disparos[key].push(dp);
+          dragSrc={date:null,idx:null};
+          renderMonthGrid();
+          showToast('Disparo movido!');
+          fbSave();
+        });
       }
       const nome=dp.produto||dp.temaLivre||'—';
       const prodObj=dp.produtoId?CATALOGO.find(x=>x.id===dp.produtoId):null;
@@ -1812,6 +1836,34 @@ function renderWeekCards(key){
     // drag events
     card.addEventListener('dragstart', onDragStart);
     card.addEventListener('dragend',   onDragEnd);
+    if(!IS_COMERCIAL){
+      card.addEventListener('dragover',(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect='move';
+        c.closest('.week-col')?.classList.add('drag-over');
+      });
+      card.addEventListener('drop',(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const colEl=c.closest('.week-col');
+        if(colEl)colEl.classList.remove('drag-over');
+        if(!dragSrc.date||dragSrc.date===key)return;
+        const src=state.disparos[dragSrc.date]||[];
+        const dp=src[dragSrc.idx];
+        if(!dp)return;
+        src.splice(dragSrc.idx,1);
+        if(!src.length)delete state.disparos[dragSrc.date];
+        else state.disparos[dragSrc.date]=src;
+        if(!state.disparos[key])state.disparos[key]=[];
+        state.disparos[key].push(dp);
+        renderWeekCards(dragSrc.date);
+        renderWeekCards(key);
+        showToast('Disparo movido!');
+        dragSrc={date:null,idx:null};
+        fbSave();
+      });
+    }
     c.appendChild(card);
   });
   // ordenar visualmente por hora
