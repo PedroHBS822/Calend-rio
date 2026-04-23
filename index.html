@@ -623,7 +623,8 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .profile-theme-row{display:flex;gap:8px;}
 .theme-btn{flex:1;padding:10px 8px;border:2px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text-muted);text-align:center;transition:all .15s;}
 .theme-btn.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
-.profile-footer{padding:16px 20px;border-top:1px solid var(--border);}
+.profile-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px;}
+#profile-version{text-align:center;font-size:.72rem;font-weight:700;color:var(--text-muted);letter-spacing:.04em;}
 .btn-logout-profile{width:100%;padding:11px;background:transparent;border:1.5px solid var(--border);border-radius:10px;color:var(--restrict);font-size:.88rem;font-weight:700;cursor:pointer;transition:all .15s;}
 .btn-logout-profile:hover{background:rgba(224,62,62,.07);border-color:var(--restrict);}
 /* Online presence */
@@ -837,6 +838,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   </div>
   <div class="profile-footer">
     <button class="btn-logout-profile" onclick="doLogout()">↪ Sair da conta</button>
+    <div id="profile-version"></div>
   </div>
 </div>
 
@@ -2196,6 +2198,7 @@ function changeConsolMonth(d){consolOffset+=d;renderConsolidation();}
 
 // ════ COLABORAÇÃO JSON ════
 const JSON_VERSION='1.1';
+const APP_VERSION='1.0';
 function buildExportPayload(){return{version:JSON_VERSION,exportedAt:new Date().toISOString(),disparos:state.disparos,campaigns:state.campaigns,motesCustom:state.motesCustom};}
 function countDisparos(d){return Object.values(d).reduce((a,arr)=>a+arr.length,0);}
 function setCollabStatus(msg,hi){const el=document.getElementById('collab-status');el.innerHTML=hi?`<span>${msg}</span>`:msg;}
@@ -2732,6 +2735,7 @@ function openProfilePanel(){
   document.getElementById('theme-btn-dark').classList.toggle('active', isDark);
   document.getElementById('theme-btn-light').classList.toggle('active', !isDark);
   buildAvatarGrid();
+  document.getElementById('profile-version').textContent='v' + APP_VERSION;
   document.getElementById('profile-panel').classList.add('open');
   document.getElementById('profile-overlay').classList.add('open');
 }
