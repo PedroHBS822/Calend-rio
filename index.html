@@ -131,7 +131,7 @@ const firebaseConfig = {
     // Escuta mudanças em tempo real
     listen(callback) {
       return onSnapshot(CAL_DOC, (snap) => {
-        if (snap.exists()) callback(snap.data());
+        callback(snap.exists() ? snap.data() : null);
       }, (err) => {
         console.error("Firebase listen error:", err);
       });
@@ -2309,34 +2309,37 @@ async function switchProduct(id){
   await reloadProduct(false);
 }
 
-async function reloadProduct(isInit=true){
+function reloadProduct(isInit=true){
   state.disparos={};state.campaigns=[];state.motesCustom={};state.comentarios={};state.negociacoes=[];
   setSyncStatus('connecting');
-  const cloudData=await window._fb.load();
-  if(cloudData&&cloudData.disparos){
-    state.disparos=cloudData.disparos;
-    state.campaigns=cloudData.campaigns||[];
-    state.motesCustom=cloudData.motesCustom||{};
-    state.comentarios=cloudData.comentarios||{};
-    state.negociacoes=cloudData.negociacoes||[];
-    if(isInit){setCollabStatus(`Carregado da nuvem às ${new Date().toLocaleTimeString('pt-BR')}`,true);showToast('☁️ Dados carregados da nuvem!');}
-    else showToast(`☁️ ${PRODUCTS.find(p=>p.id===currentProduct)?.name} carregado!`);
-  } else if(isInit){
-    loadExamples();
-    await window._fb.save(state);
-    showToast('☁️ Calendário inicial enviado para a nuvem!');
-  }
-  if(isInit){
-    (function(){const now=new Date();const target=new Date(2026,3,1);monthViewOffset=(target.getFullYear()-now.getFullYear())*12+(target.getMonth()-now.getMonth());})();
-  } else {
-    monthViewOffset=0;weekOffset=0;
-  }
-  renderMonthGrid();
-  if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();
-  if(document.getElementById('page-negociacao').classList.contains('active'))buildNegociacaoPage();
-  setSyncStatus('live');
-  updateCommentAlert();
+  if(_fbUnsubscribe){_fbUnsubscribe();_fbUnsubscribe=null;}
+  let first=true;
   _fbUnsubscribe=window._fb.listen((data)=>{
+    if(first){
+      first=false;
+      if(data&&data.disparos){
+        state.disparos=data.disparos;
+        state.campaigns=data.campaigns||[];
+        state.motesCustom=data.motesCustom||{};
+        state.comentarios=data.comentarios||{};
+        state.negociacoes=data.negociacoes||[];
+        setCollabStatus(`Carregado da nuvem às ${new Date().toLocaleTimeString('pt-BR')}`,true);
+        showToast('☁️ Dados carregados da nuvem!');
+      } else if(isInit){
+        loadExamples();
+        window._fb.save(state);
+        showToast('☁️ Calendário inicial enviado para a nuvem!');
+      }
+      if(isInit){(function(){const now=new Date();const target=new Date(2026,3,1);monthViewOffset=(target.getFullYear()-now.getFullYear())*12+(target.getMonth()-now.getMonth());})();}
+      else{monthViewOffset=0;weekOffset=0;}
+      renderMonthGrid();
+      if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();
+      if(document.getElementById('page-negociacao').classList.contains('active'))buildNegociacaoPage();
+      updateCommentAlert();
+      setSyncStatus('live');
+      return;
+    }
+    // Atualizações em tempo real subsequentes
     if(!data||!data.disparos)return;
     state.disparos=data.disparos;state.campaigns=data.campaigns||[];state.motesCustom=data.motesCustom||{};
     state.comentarios=data.comentarios||{};state.negociacoes=data.negociacoes||[];
@@ -2442,10 +2445,10 @@ function setSyncStatus(s) {
   label.textContent = st.text;
 }
 
-async function initFirebase() {
+function initFirebase() {
   if (!window._fbReady || !window._fb) return;
   applyTheme(PRODUCTS[0]);
-  await reloadProduct(true);
+  reloadProduct(true);
 }
 
 // ════ MODO COMERCIAL ════
@@ -2779,6 +2782,7 @@ async function doLogin(){
   try{
     const profile=await window._fb.login(nick,pass);
     _currentUserProfile=profile;
+    try{localStorage.setItem('_up',JSON.stringify(profile));}catch(_){}
     await navigateAfterAuth(profile);
   }catch(e){
     _currentUserProfile=null;  // libera sentinel em caso de erro
@@ -2822,6 +2826,7 @@ async function doLogout(){
   if(_unsubPending){_unsubPending();_unsubPending=null;}
   if(_fbUnsubscribe){_fbUnsubscribe();_fbUnsubscribe=null;}
   _appInitialized=false;
+  try{localStorage.removeItem('_up');}catch(_){}
   await clearPresenceDoc();
   _currentUserProfile=null;
   await window._fb.logout();
@@ -3003,9 +3008,25 @@ function initAuthListener(){
     // Se já navegamos via doLogin/doRegister, não repete
     if(_currentUserProfile) return;
     try{
-      const profile=await window._fb.getUserProfile(user.uid);
+      // Tenta cache local primeiro para não bloquear na rede
+      let profile=null;
+      try{const c=localStorage.getItem('_up');if(c){const p=JSON.parse(c);if(p.uid===user.uid)profile=p;}}catch(_){}
+      if(profile){
+        _currentUserProfile=profile;
+        navigateAfterAuth(profile);
+        // Verifica em background se o perfil mudou
+        window._fb.getUserProfile(user.uid).then(fresh=>{
+          if(fresh&&JSON.stringify(fresh)!==JSON.stringify(profile)){
+            _currentUserProfile=fresh;
+            try{localStorage.setItem('_up',JSON.stringify(fresh));}catch(_){}
+          }
+        }).catch(()=>{});
+        return;
+      }
+      profile=await window._fb.getUserProfile(user.uid);
       if(!profile){showAuthScreen();return;}
       _currentUserProfile=profile;
+      try{localStorage.setItem('_up',JSON.stringify(profile));}catch(_){}
       await navigateAfterAuth(profile);
     }catch(e){console.error('Auth error:',e);showAuthScreen();}
   });
