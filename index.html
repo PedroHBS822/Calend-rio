@@ -2829,8 +2829,12 @@ let _presenceInterval = null;
 let _unsubPresence = null;
 
 async function updatePresenceDoc(tab){
-  if(!_currentUserProfile?.uid) return;
+  if(!_currentUserProfile?.uid){
+    console.warn('[Presence] updatePresenceDoc: sem uid', _currentUserProfile);
+    return;
+  }
   const {uid, nickname, avatar} = _currentUserProfile;
+  console.log('[Presence] escrevendo', {uid, nickname, tab: tab||_currentTab});
   await window._fb.updatePresence(uid, {nickname, avatar: avatar||'👤', tab: tab||_currentTab});
 }
 
@@ -2842,10 +2846,12 @@ async function clearPresenceDoc(){
 }
 
 function renderOnlineUsers(users){
+  console.log('[Presence] renderOnlineUsers', users.length, 'docs', users.map(u=>u.nickname));
   const el = document.getElementById('online-users');
-  if(!el) return;
+  if(!el){ console.warn('[Presence] #online-users não encontrado'); return; }
   const now = Date.now();
   const active = users.filter(u => u.ts && (now - new Date(u.ts).getTime()) < 90000);
+  console.log('[Presence] ativos:', active.length);
   if(active.length === 0){ el.innerHTML=''; return; }
   const MAX = 5;
   const visible = active.slice(0, MAX);
