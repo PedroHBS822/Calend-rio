@@ -2705,11 +2705,13 @@ async function doLogin(){
   const btn=document.getElementById('btn-do-login');
   btn.disabled=true;btn.textContent='Entrando...';
   setAuthError('');
+  _currentUserProfile={};  // sentinel: bloqueia onAuthStateChanged de correr junto
   try{
     const profile=await window._fb.login(nick,pass);
     _currentUserProfile=profile;
     await navigateAfterAuth(profile);
   }catch(e){
+    _currentUserProfile=null;  // libera sentinel em caso de erro
     const msg=e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'?'Nickname ou senha incorretos.':e.message;
     setAuthError(msg);
   }finally{btn.disabled=false;btn.textContent='Entrar';}
@@ -2734,11 +2736,13 @@ async function doRegister(){
   const btn=document.getElementById('btn-do-register');
   btn.disabled=true;btn.textContent='Criando conta...';
   setAuthError('');
+  _currentUserProfile={};  // sentinel
   try{
     const profile=await window._fb.register(nick,pass,_selectedTipo);
     _currentUserProfile=profile;
     await navigateAfterAuth(profile);
   }catch(e){
+    _currentUserProfile=null;  // libera sentinel em caso de erro
     setAuthError(e.message||'Erro ao criar conta.');
   }finally{btn.disabled=false;btn.textContent='Criar conta';}
 }
@@ -2758,6 +2762,7 @@ function showAuthScreen(){
   document.getElementById('main-app').style.display='none';
   document.getElementById('user-profile-btn').style.display='none';
   document.getElementById('approval-badge-btn').style.display='none';
+  document.body.classList.remove('comercial-mode');
   closeProfilePanel();
 }
 
