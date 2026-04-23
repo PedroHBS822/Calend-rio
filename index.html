@@ -72,7 +72,10 @@ const firebaseConfig = {
 
     listenPendingUsers(cb) {
       const q = query(collection(db,'usuarios'), where('status','==','pending'));
-      return onSnapshot(q, snap => cb(snap.docs.map(d => ({uid:d.id,...d.data()}))));
+      return onSnapshot(q,
+        snap => cb(snap.docs.map(d => ({uid:d.id,...d.data()}))),
+        err => { console.error('listenPendingUsers error:', err); cb([]); }
+      );
     },
 
     async approveUser(uid) {
@@ -2731,13 +2734,16 @@ function showMainApp(profile){
   document.getElementById('main-app').style.display='';
   initProfileUI(profile);
   // Listener de aprovações apenas pra growth
-  if(profile.tipo==='growth'&&!_unsubPending){
-    _unsubPending=window._fb.listenPendingUsers(users=>{
-      const count=users.length;
-      document.getElementById('approval-badge-count').textContent=count;
-      document.getElementById('approval-badge-btn').style.display=count>0?'':'none';
-      renderApprovalList(users);
-    });
+  if(profile.tipo==='growth'){
+    document.getElementById('approval-badge-btn').style.display='';
+    if(!_unsubPending){
+      _unsubPending=window._fb.listenPendingUsers(users=>{
+        const count=users.length;
+        document.getElementById('approval-badge-count').textContent=count||'';
+        document.getElementById('approval-badge-btn').style.display='';
+        renderApprovalList(users);
+      });
+    }
   }
 }
 
