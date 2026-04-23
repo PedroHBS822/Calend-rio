@@ -413,10 +413,7 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .wcard.dragging,.dcard.dragging{opacity:.35;transform:scale(.97);}
 .week-col.drag-over{background:#eef0ff;border-color:var(--push);box-shadow:0 0 0 2px rgba(108,99,255,.2);}
 .mcell.drag-over{background:var(--accent-soft)!important;border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(26,122,74,.2);}
-/* durante drag, cards filhos não interceptam eventos — deixa chegar na col/cell */
-body.is-dragging .wcard,body.is-dragging .dcard{pointer-events:none;}
 .week-col.drag-over .wcards{outline:2px dashed rgba(108,99,255,.3);outline-offset:2px;border-radius:6px;}
-.drag-ghost{position:fixed;pointer-events:none;opacity:.9;z-index:9999;border-radius:8px;box-shadow:var(--shadow-lg);transform:rotate(2deg);}
 
 /* ════════════════════════════
    CONSOLIDAÇÃO
@@ -1586,16 +1583,11 @@ function renderMonthGrid(){
         card.dataset.srcIdx=idx;
         card.addEventListener('dragstart',onDragStart);
         card.addEventListener('dragend',onDragEnd);
-        card.addEventListener('dragover',(e)=>{
-          e.preventDefault();
-          e.stopPropagation();
-          e.dataTransfer.dropEffect='move';
-          cell.classList.add('drag-over');
-        });
+        card.addEventListener('dragover',(e)=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
         card.addEventListener('drop',(e)=>{
           e.preventDefault();
           e.stopPropagation();
-          cell.classList.remove('drag-over');
+          document.querySelectorAll('.mcell').forEach(c=>c.classList.remove('drag-over'));
           if(!dragSrc.date||dragSrc.date===key)return;
           const src=state.disparos[dragSrc.date]||[];
           const dp=src[dragSrc.idx];
@@ -1839,17 +1831,11 @@ function renderWeekCards(key){
     card.addEventListener('dragstart', onDragStart);
     card.addEventListener('dragend',   onDragEnd);
     if(!IS_COMERCIAL){
-      card.addEventListener('dragover',(e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        e.dataTransfer.dropEffect='move';
-        c.closest('.week-col')?.classList.add('drag-over');
-      });
+      card.addEventListener('dragover',(e)=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
       card.addEventListener('drop',(e)=>{
         e.preventDefault();
         e.stopPropagation();
-        const colEl=c.closest('.week-col');
-        if(colEl)colEl.classList.remove('drag-over');
+        document.querySelectorAll('.week-col').forEach(c=>c.classList.remove('drag-over'));
         if(!dragSrc.date||dragSrc.date===key)return;
         const src=state.disparos[dragSrc.date]||[];
         const dp=src[dragSrc.idx];
@@ -1859,10 +1845,11 @@ function renderWeekCards(key){
         else state.disparos[dragSrc.date]=src;
         if(!state.disparos[key])state.disparos[key]=[];
         state.disparos[key].push(dp);
-        renderWeekCards(dragSrc.date);
+        const srcDate=dragSrc.date;
+        dragSrc={date:null,idx:null};
+        renderWeekCards(srcDate);
         renderWeekCards(key);
         showToast('Disparo movido!');
-        dragSrc={date:null,idx:null};
         fbSave();
       });
     }
@@ -2116,14 +2103,12 @@ function onDragStart(e){
   dragSrc.date = this.dataset.srcDate;
   dragSrc.idx  = parseInt(this.dataset.srcIdx);
   this.classList.add('dragging');
-  document.body.classList.add('is-dragging');
   e.dataTransfer.effectAllowed='move';
   e.dataTransfer.setData('text/plain', JSON.stringify(dragSrc));
 }
 
 function onDragEnd(e){
   this.classList.remove('dragging');
-  document.body.classList.remove('is-dragging');
   document.querySelectorAll('.week-col,.mcell').forEach(c=>c.classList.remove('drag-over'));
 }
 
