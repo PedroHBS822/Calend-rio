@@ -2739,12 +2739,12 @@ function showMainApp(profile){
   initProfileUI(profile);
   // Listener de aprovações apenas pra growth
   if(profile.tipo==='growth'){
-    document.getElementById('approval-badge-btn').style.display='';
+    document.getElementById('approval-badge-btn').style.display='inline-flex';
     if(!_unsubPending){
       _unsubPending=window._fb.listenPendingUsers(users=>{
         const count=users.length;
         document.getElementById('approval-badge-count').textContent=count||'';
-        document.getElementById('approval-badge-btn').style.display='';
+        document.getElementById('approval-badge-btn').style.display='inline-flex';
         renderApprovalList(users);
       });
     }
