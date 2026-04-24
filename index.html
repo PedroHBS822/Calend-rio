@@ -2241,6 +2241,7 @@ function handleCSVImport(event){
         if(!newDisparos[dk])newDisparos[dk]=[];
         newDisparos[dk].push(disparo);count++;
       }
+      console.log('[CSV parse] count=',count,'skipped=',skipped,'keys=',Object.keys(newDisparos));
       if(!count){showToast(`Nenhum disparo para ${expectedBiz||'este produto'} no CSV.`);return;}
       pendingImportData={disparos:newDisparos,campaigns:[],motesCustom:{}};
       const curCount=countDisparos(state.disparos);
@@ -2261,11 +2262,22 @@ function openConfirm(title,msg,stats,btnLabel){
   document.getElementById('confirm-overlay').classList.add('open');
 }
 function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');pendingImportData=null;}
+let _importTs=0;
 function confirmOK(){
   const data=pendingImportData;
   closeConfirm();
   if(data==='clear'){state.disparos={};state.campaigns=[];renderMonthGrid();setCollabStatus('Limpo');showToast('Calendário limpo.');fbSave();}
-  else if(data){state.disparos=data.disparos;state.campaigns=data.campaigns||[];state.motesCustom=data.motesCustom||{};weekOffset=0;monthViewOffset=0;renderMonthGrid();if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();setCollabStatus(`Importado ${new Date().toLocaleTimeString('pt-BR')}`,true);showToast('Importado com sucesso!');fbSave();}
+  else if(data){
+    _importTs=Date.now();
+    state.disparos=data.disparos;state.campaigns=data.campaigns||[];state.motesCustom=data.motesCustom||{};
+    weekOffset=0;monthViewOffset=0;
+    console.log('[CSV import] disparos importados:',Object.keys(state.disparos).length,'datas',Object.keys(state.disparos));
+    renderMonthGrid();
+    buildWeekCalendar();
+    setCollabStatus(`Importado ${new Date().toLocaleTimeString('pt-BR')}`,true);
+    showToast('Importado com sucesso!');
+    fbSave();
+  }
 }
 document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
 
@@ -2367,6 +2379,8 @@ function reloadProduct(isInit=true){
     }
     // Atualizações em tempo real subsequentes
     if(!data||!data.disparos)return;
+    // Don't overwrite a just-imported state (give fbSave time to persist it)
+    if(Date.now()-_importTs<3000){console.log('[onSnapshot] ignorado — import recente');return;}
     state.disparos=data.disparos;state.campaigns=data.campaigns||[];state.motesCustom=data.motesCustom||{};
     state.comentarios=data.comentarios||{};state.negociacoes=data.negociacoes||[];
     if(document.getElementById('page-monthly').classList.contains('active'))renderMonthGrid();
