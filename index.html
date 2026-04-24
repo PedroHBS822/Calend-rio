@@ -2262,9 +2262,10 @@ function openConfirm(title,msg,stats,btnLabel){
 }
 function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');pendingImportData=null;}
 function confirmOK(){
+  const data=pendingImportData;
   closeConfirm();
-  if(pendingImportData==='clear'){state.disparos={};state.campaigns=[];renderMonthGrid();setCollabStatus('Limpo');showToast('Calendário limpo.');fbSave();}
-  else if(pendingImportData){state.disparos=pendingImportData.disparos;state.campaigns=pendingImportData.campaigns||[];state.motesCustom=pendingImportData.motesCustom||{};pendingImportData=null;weekOffset=0;monthViewOffset=0;renderMonthGrid();if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();setCollabStatus(`Importado ${new Date().toLocaleTimeString('pt-BR')}`,true);showToast('Importado com sucesso!');fbSave();}
+  if(data==='clear'){state.disparos={};state.campaigns=[];renderMonthGrid();setCollabStatus('Limpo');showToast('Calendário limpo.');fbSave();}
+  else if(data){state.disparos=data.disparos;state.campaigns=data.campaigns||[];state.motesCustom=data.motesCustom||{};weekOffset=0;monthViewOffset=0;renderMonthGrid();if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();setCollabStatus(`Importado ${new Date().toLocaleTimeString('pt-BR')}`,true);showToast('Importado com sucesso!');fbSave();}
 }
 document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
 
