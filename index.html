@@ -236,8 +236,7 @@ body.dark{
 body.dark .tabs-bar,
 body.dark .collab-bar{background:var(--surface);border-color:var(--border);}
 body.dark .modal,
-body.dark .confirm-box,
-body.dark .json-box{background:var(--surface);border-color:var(--border);}
+body.dark .confirm-box{background:var(--surface);border-color:var(--border);}
 body.dark .product-dropdown{background:var(--surface);border-color:var(--border);}
 body.dark .pd-item:hover{background:var(--accent-soft);}
 body.dark input,body.dark textarea,body.dark select{background:var(--surface2);color:var(--text);border-color:var(--border);}
@@ -515,8 +514,8 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .swatch.selected-swatch{border-color:var(--text);}
 
 /* ── Confirm / JSON modals ── */
-.confirm-overlay,.json-overlay{position:fixed;inset:0;background:rgba(20,20,40,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
-.confirm-overlay.open,.json-overlay.open{opacity:1;pointer-events:all;}
+.confirm-overlay{position:fixed;inset:0;background:rgba(20,20,40,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+.confirm-overlay.open{opacity:1;pointer-events:all;}
 .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:400px;box-shadow:var(--shadow-lg);transform:translateY(12px) scale(.98);transition:transform .2s;}
 .confirm-overlay.open .confirm-box{transform:translateY(0) scale(1);}
 .confirm-box h3{font-size:1rem;font-weight:700;margin-bottom:10px;}
@@ -524,13 +523,8 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .confirm-stats{background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:.8rem;color:var(--text);margin-bottom:18px;border:1px solid var(--border);line-height:1.7;}
 .confirm-stats b{color:var(--accent);}
 .confirm-actions{display:flex;gap:10px;}
-.json-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);transform:translateY(12px);transition:transform .2s;}
-.json-overlay.open .json-box{transform:translateY(0);}
-.json-box-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.json-box-header h3{font-size:1rem;font-weight:700;}
-.json-box-header button{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1.1rem;}
-.json-textarea{flex:1;min-height:300px;overflow-y:auto;background:#f8f9ff;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'Menlo','Consolas',monospace;font-size:.75rem;color:var(--text);line-height:1.6;resize:none;outline:none;}
-.json-actions{display:flex;gap:8px;margin-top:14px;}
+.wcard-business{font-size:.67rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);}
+.dcard-biz{font-size:.64rem;font-weight:700;margin-top:2px;opacity:.75;}
 
 /* ── Comentários nos cards ── */
 .wcard-comment-btn{position:absolute;top:6px;right:26px;background:transparent;border:none;cursor:pointer;font-size:.68rem;padding:0;display:flex;align-items:center;gap:2px;color:var(--text-muted);opacity:0;transition:opacity .15s;font-weight:700;}
@@ -856,16 +850,12 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
     <span id="sync-label">Conectando...</span>
   </div>
   <div class="collab-sep"></div>
-  <button class="btn-collab" onclick="exportJSON()">⬇ Exportar JSON</button>
-  <button class="btn-collab" onclick="showJSONPreview()">👁 Ver JSON</button>
-  <button class="btn-collab" onclick="copyJSON()">📋 Copiar JSON</button>
-  <div class="collab-sep"></div>
-  <button class="btn-collab" onclick="document.getElementById('import-input').click()">⬆ Importar JSON</button>
-  <input type="file" id="import-input" style="display:none" onchange="handleImport(event)">
-  <div class="collab-sep"></div>
   <button class="btn-collab danger" onclick="confirmClear()">🗑 Limpar</button>
+  <div class="collab-sep" id="csv-sep" style="display:none"></div>
+  <button class="btn-collab" id="btn-import-csv" style="display:none" onclick="document.getElementById('csv-input').click()">📊 Importar CSV</button>
+  <input type="file" id="csv-input" style="display:none" accept=".csv,text/csv" onchange="handleCSVImport(event)">
   <div class="collab-status" id="collab-status">Aguardando conexão...</div>
-  <span class="app-version-tag">v1.6</span>
+  <span class="app-version-tag">v1.7</span>
 </div>
 
 <div class="comercial-banner" id="comercial-banner">👁 Modo Visualização — Comercial &nbsp;·&nbsp; Você pode comentar nos disparos e solicitar novos na aba Negociação</div>
@@ -1237,21 +1227,6 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   </div>
 </div>
 
-<!-- ═══ JSON PREVIEW ═══ -->
-<div class="json-overlay" id="json-overlay">
-  <div class="json-box">
-    <div class="json-box-header">
-      <h3>JSON do Calendário</h3>
-      <button onclick="closeJSONPreview()">✕</button>
-    </div>
-    <textarea class="json-textarea" id="json-textarea" readonly=""></textarea>
-    <div class="json-actions">
-      <button class="btn btn-secondary" style="flex:0 0 auto;padding:8px 16px" onclick="closeJSONPreview()">Fechar</button>
-      <button class="btn-collab" style="flex:1" onclick="copyJSONFromPreview()">📋 Copiar</button>
-      <button class="btn btn-primary" style="flex:1" onclick="exportJSONFromPreview()">⬇ Download</button>
-    </div>
-  </div>
-</div>
 
 <div class="toast" id="toast"></div>
 
@@ -1622,7 +1597,7 @@ function renderMonthGrid(){
         <div class="dcard-nome">${nome}</div>
         ${dp.mecanica?`<div class="dcard-mecanica">${dp.mecanica}</div>`:''}
         ${dp.hora?`<div class="dcard-hora">🕐 ${dp.hora}</div>`:''}
-        ${dp.ticket?`<div class="dcard-ticket ${dp.ticket==='High Ticket'?'high':'low'}">${dp.ticket==='High Ticket'?'▲ High':'▼ Low'}</div>`:''}
+        ${dp.ticket?`<div class="dcard-ticket ${dp.ticket==='High Ticket'?'high':'low'}">${dp.ticket==='High Ticket'?'▲ High':'▼ Low'}</div>`:dp.perfilBase?`<div class="dcard-biz">${dp.perfilBase}</div>`:''}
       `;
       dcardsEl.appendChild(card);
     });
@@ -1830,7 +1805,7 @@ function renderWeekCards(key){
       <button class="wcard-comment-btn${commentCount>0?' has-comments':''}" onclick="openCommentModal('${key}',${idx})" title="Comentários">💬${commentCount>0?` ${commentCount}`:''}</button>
       <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
       <div class="wcard-footer">
-        ${(!simplified&&!dgafi)?`<span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>`:'<span></span>'}
+        ${simplified?'<span></span>':dgafi?`<span class="wcard-business">${d.perfilBase||''}</span>`:`<span class="wcard-ticket ${d.ticket==='High Ticket'?'high':'low'}">${d.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>`}
         <div style="display:flex;align-items:center;gap:3px">
           <button class="wcard-feito-btn${d.disparoFeito?' feito-on':''}" onclick="toggleDisparoFeito('${key}',${idx})" title="${d.disparoFeito?'Disparo feito — clique para desmarcar':'Marcar disparo como feito'}">✓</button>
           <button class="wcard-briefing-btn${d.briefingAberto?' briefing-on':''}" onclick="toggleBriefing('${key}',${idx})" title="${d.briefingAberto?'Briefing aberto — clique para desmarcar':'Marcar briefing como aberto'}">${d.briefingAberto?'📬':'📭'}</button>
@@ -2198,57 +2173,79 @@ function renderConsolidation(){
 }
 function changeConsolMonth(d){consolOffset+=d;renderConsolidation();}
 
-// ════ COLABORAÇÃO JSON ════
-const JSON_VERSION='1.1';
-const APP_VERSION='1.4';
-function buildExportPayload(){return{version:JSON_VERSION,exportedAt:new Date().toISOString(),disparos:state.disparos,campaigns:state.campaigns,motesCustom:state.motesCustom};}
+// ════ IMPORTAR CSV ════
 function countDisparos(d){return Object.values(d).reduce((a,arr)=>a+arr.length,0);}
 function setCollabStatus(msg,hi){const el=document.getElementById('collab-status');el.innerHTML=hi?`<span>${msg}</span>`:msg;}
-function exportJSON(){
-  const blob=new Blob([JSON.stringify(buildExportPayload(),null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');
-  const now=new Date();const stamp=`${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-  a.href=url;a.download=`calendario_e2e_${stamp}.json`;a.click();URL.revokeObjectURL(url);
-  setCollabStatus(`Exportado ${new Date().toLocaleTimeString('pt-BR')}`,true);showToast('JSON exportado!');
+
+function parseCSV(text){
+  const rows=[];const lines=text.split('\n');
+  for(const line of lines){
+    if(!line.trim())continue;
+    const row=[];let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){row.push(cur);cur='';}else{cur+=ch;}
+    }
+    row.push(cur);rows.push(row);
+  }
+  return rows;
 }
-function showJSONPreview(){document.getElementById('json-textarea').value=JSON.stringify(buildExportPayload(),null,2);document.getElementById('json-overlay').classList.add('open');}
-function closeJSONPreview(){document.getElementById('json-overlay').classList.remove('open');}
-function copyJSONFromPreview(){copyJSON();}
-function exportJSONFromPreview(){closeJSONPreview();exportJSON();}
-function copyJSON(){
-  const text=JSON.stringify(buildExportPayload(),null,2);
-  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>{showToast('Copiado!');setCollabStatus(`Copiado ${new Date().toLocaleTimeString('pt-BR')}`,true);});}
-  else{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('Copiado!');}
+
+function parseDateCSV(str){
+  const months={January:0,February:1,March:2,April:3,May:4,June:5,July:6,August:7,September:8,October:9,November:10,December:11};
+  const horaMatch=str.match(/(\d{1,2}:\d{2})\s*\(/);
+  const hora=horaMatch?horaMatch[1].padStart(5,'0'):'';
+  const dateOnly=str.replace(/\d{1,2}:\d{2}.*$/,'').trim().replace(/,\s*$/,'');
+  const m=dateOnly.match(/^(\w+)\s+(\d{1,2}),?\s+(\d{4})/);
+  if(!m)return{dateKey:null,hora:''};
+  const month=months[m[1]];
+  if(month===undefined)return{dateKey:null,hora:''};
+  return{dateKey:`${m[3]}-${pad(month+1)}-${pad(parseInt(m[2]))}`,hora};
 }
+
 let pendingImportData=null;
-function handleImport(event){
+function handleCSVImport(event){
   const file=event.target.files[0];if(!file)return;event.target.value='';
   const reader=new FileReader();
   reader.onload=(e)=>{
     try{
-      const data=JSON.parse(e.target.result);
-      // validação permissiva — aceita qualquer objeto com disparos OU sem (JSON vazio também importa)
-      if(typeof data!=='object'||data===null) throw new Error('não é objeto');
-      if(!data.disparos) data.disparos={};
-      if(!data.campaigns) data.campaigns=[];
-      pendingImportData=data;
-      const newCount=countDisparos(data.disparos);
+      const rows=parseCSV(e.target.result);
+      if(rows.length<2){showToast('CSV vazio ou inválido.');return;}
+      const norm=s=>s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      const hdr=rows[0].map(norm);
+      const ci=(...ns)=>{for(const n of ns){const i=hdr.indexOf(norm(n));if(i!==-1)return i;}return -1;};
+      const nomeIdx=ci('Nome'),dateIdx=ci('Date'),bizIdx=ci('Business'),canalIdx=ci('Canal');
+      const segIdx=ci('Segmentação','Segmentacao'),contIdx=ci('Conteúdo','Conteudo');
+      if(nomeIdx===-1||dateIdx===-1||canalIdx===-1){showToast('CSV inválido: colunas Nome, Date e Canal são obrigatórias.');return;}
+      const CMAP={PUSH:'Push',DM:'DM',INAPP:'In-App','IN-APP':'In-App',EMAIL:'E-mail','E-MAIL':'E-mail',WHATSAPP:'WhatsApp'};
+      const newDisparos={};let count=0;
+      for(let i=1;i<rows.length;i++){
+        const r=rows[i];if(!r.some(c=>c.trim()))continue;
+        const nome=(r[nomeIdx]||'').trim();
+        const dateStr=((r[dateIdx]||'').trim().split('→')[0]).trim();
+        const biz=bizIdx!==-1?(r[bizIdx]||'').trim().toUpperCase():'';
+        const canalRaw=(r[canalIdx]||'').trim().toUpperCase();
+        const seg=segIdx!==-1?(r[segIdx]||'').trim():'';
+        const cont=contIdx!==-1?(r[contIdx]||'').trim():'';
+        if(!nome||!dateStr)continue;
+        const{dateKey:dk,hora}=parseDateCSV(dateStr);
+        if(!dk)continue;
+        const canal=CMAP[canalRaw]||canalRaw;
+        const publico=seg?seg.split(/[,;]/).map(s=>s.trim()).filter(Boolean):[];
+        const disparo={canal,hora:hora||'',temaLivre:nome,publico,perfilBase:biz||null,produto:null,mecanica:cont||null,briefingAberto:false,disparoFeito:false,obs:null};
+        if(!newDisparos[dk])newDisparos[dk]=[];
+        newDisparos[dk].push(disparo);count++;
+      }
+      if(!count){showToast('Nenhum disparo válido no CSV.');return;}
+      pendingImportData={disparos:newDisparos,campaigns:[],motesCustom:{}};
       const curCount=countDisparos(state.disparos);
-      const at=data.exportedAt?new Date(data.exportedAt).toLocaleString('pt-BR'):'desconhecida';
-      openConfirm(
-        '⬆ Importar Calendário',
-        'Os dados atuais serão substituídos pelo arquivo importado.',
-        `Arquivo: <b>${file.name}</b><br>Exportado: <b>${at}</b><br>Disparos no arquivo: <b>${newCount}</b><br>Disparos atuais (serão perdidos): <b>${curCount}</b>`,
-        'Importar'
-      );
-    }catch(err){
-      showToast('Arquivo inválido: ' + err.message);
-      console.error('Import error:', err);
-    }
+      openConfirm('📊 Importar CSV','Os disparos atuais serão substituídos pelos do CSV.',`Arquivo: <b>${file.name}</b><br>Disparos encontrados: <b>${count}</b><br>Disparos atuais (serão perdidos): <b>${curCount}</b>`,'Importar');
+    }catch(err){showToast('Erro ao processar CSV: '+err.message);console.error('CSV import error:',err);}
   };
   reader.onerror=()=>showToast('Erro ao ler o arquivo.');
   reader.readAsText(file);
 }
+
 function confirmClear(){const c=countDisparos(state.disparos);if(!c){showToast('Nada para remover.');return;}pendingImportData='clear';openConfirm('🗑 Limpar Calendário','Todos os disparos serão removidos.',`Disparos que serão removidos: <b>${c}</b>`,'Limpar tudo');}
 function openConfirm(title,msg,stats,btnLabel){
   document.getElementById('confirm-title').textContent=title;
@@ -2261,10 +2258,9 @@ function closeConfirm(){document.getElementById('confirm-overlay').classList.rem
 function confirmOK(){
   closeConfirm();
   if(pendingImportData==='clear'){state.disparos={};state.campaigns=[];renderMonthGrid();setCollabStatus('Limpo');showToast('Calendário limpo.');fbSave();}
-  else if(pendingImportData){state.disparos=pendingImportData.disparos;state.campaigns=pendingImportData.campaigns||[];state.motesCustom=pendingImportData.motesCustom||{};pendingImportData=null;weekOffset=0;monthViewOffset=0;renderMonthGrid();setCollabStatus(`Importado ${new Date().toLocaleTimeString('pt-BR')}`,true);showToast('Importado com sucesso!');fbSave();}
+  else if(pendingImportData){state.disparos=pendingImportData.disparos;state.campaigns=pendingImportData.campaigns||[];state.motesCustom=pendingImportData.motesCustom||{};pendingImportData=null;weekOffset=0;monthViewOffset=0;renderMonthGrid();if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();setCollabStatus(`Importado ${new Date().toLocaleTimeString('pt-BR')}`,true);showToast('Importado com sucesso!');fbSave();}
 }
 document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
-document.getElementById('json-overlay').addEventListener('click',function(e){if(e.target===this)closeJSONPreview();});
 
 // ════ TOAST ════
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
@@ -2314,9 +2310,15 @@ function toggleProductMenu(){
 }
 document.addEventListener('click',e=>{if(!e.target.closest('.product-selector'))document.getElementById('product-menu').classList.remove('open');});
 
+function updateCSVButton(){
+  const show=currentProduct==='dg'||currentProduct==='afiliados';
+  const btn=document.getElementById('btn-import-csv');const sep=document.getElementById('csv-sep');
+  if(btn){btn.style.display=show?'':'none';sep.style.display=show?'':'none';}
+}
 async function switchProduct(id){
   if(id===currentProduct){document.getElementById('product-menu').classList.remove('open');return;}
   currentProduct=id;
+  updateCSVButton();
   const product=PRODUCTS.find(p=>p.id===id);
   document.getElementById('app-logo-name').textContent=product.name;
   applyTheme(product);
