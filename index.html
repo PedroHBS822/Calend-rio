@@ -637,14 +637,13 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
 .btn-logout-profile:hover{background:rgba(224,62,62,.07);border-color:var(--restrict);}
 /* Online presence */
 #online-presence-area{margin-left:auto;display:flex;align-items:center;gap:10px;padding-right:2px;}
-#online-users{display:flex;align-items:center;}
-.online-av{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);border:2.5px solid var(--surface);font-size:1.05rem;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;margin-left:-8px;transition:transform .15s,z-index 0s;flex-shrink:0;z-index:1;}
-.online-av:first-child{margin-left:0;}
-.online-av:hover{transform:scale(1.18);z-index:10;}
-.online-av-tip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:.72rem;font-weight:700;padding:4px 9px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;}
-.online-av-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--text);}
-.online-av:hover .online-av-tip{opacity:1;}
-.online-av.is-me{border-color:var(--accent);}
+#online-users{display:flex;align-items:flex-end;gap:6px;}
+.online-av{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:transform .15s;}
+.online-av:hover{transform:translateY(-2px);}
+.online-av-circle{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);border:2.5px solid var(--surface);font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.online-av.is-me .online-av-circle{border-color:var(--accent);}
+.online-av-name{font-size:.58rem;font-weight:700;color:var(--text-muted);max-width:38px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1;text-align:center;}
+.online-overflow{font-size:.72rem;font-weight:700;color:var(--text-muted);padding:0 4px;align-self:center;}
 .online-overflow{width:32px;height:32px;border-radius:50%;background:var(--surface2);border:2.5px solid var(--surface);font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;color:var(--text-muted);margin-left:-8px;flex-shrink:0;}
 
 /* user-profile-btn no header */
@@ -2976,10 +2975,10 @@ function renderOnlineUsers(users){
   const TAB_LABELS = {monthly:'Mensal',weekly:'Semanal',consolidation:'Consolidação',negociacao:'Negociação'};
   el.innerHTML = visible.map(u => {
     const isMe = u.uid === myUid;
-    const tabLabel = TAB_LABELS[u.tab] || '';
-    const tip = u.nickname + (tabLabel ? ' · '+tabLabel : '');
-    return `<div class="online-av${isMe?' is-me':''}" onclick="navigateToUser('${u.tab||''}')" title="">` +
-      `${u.avatar||'👤'}<span class="online-av-tip">${tip}</span></div>`;
+    const shortName = (u.nickname||'?').split(' ')[0].substring(0,8);
+    return `<div class="online-av${isMe?' is-me':''}" onclick="navigateToUser('${u.tab||''}')" title="${u.nickname}">` +
+      `<div class="online-av-circle">${u.avatar||'👤'}</div>` +
+      `<span class="online-av-name">${shortName}</span></div>`;
   }).join('') + (overflow > 0 ? `<div class="online-overflow">+${overflow}</div>` : '');
 }
 
