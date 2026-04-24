@@ -2218,7 +2218,10 @@ function handleCSVImport(event){
       const segIdx=ci('Segmentação','Segmentacao'),contIdx=ci('Conteúdo','Conteudo');
       if(nomeIdx===-1||dateIdx===-1||canalIdx===-1){showToast('CSV inválido: colunas Nome, Date e Canal são obrigatórias.');return;}
       const CMAP={PUSH:'Push',DM:'DM',INAPP:'In-App','IN-APP':'In-App',EMAIL:'E-mail','E-MAIL':'E-mail',WHATSAPP:'WhatsApp'};
-      const newDisparos={};let count=0;
+      // filter by current product so DG and AFI stay in separate Firestore docs
+      const BIZ_FILTER={dg:'DG',afiliados:'AFI'};
+      const expectedBiz=BIZ_FILTER[currentProduct]||null;
+      const newDisparos={};let count=0,skipped=0;
       for(let i=1;i<rows.length;i++){
         const r=rows[i];if(!r.some(c=>c.trim()))continue;
         const nome=(r[nomeIdx]||'').trim();
@@ -2228,6 +2231,8 @@ function handleCSVImport(event){
         const seg=segIdx!==-1?(r[segIdx]||'').trim():'';
         const cont=contIdx!==-1?(r[contIdx]||'').trim():'';
         if(!nome||!dateStr)continue;
+        // skip rows that belong to a different product
+        if(expectedBiz&&biz&&biz!==expectedBiz){skipped++;continue;}
         const{dateKey:dk,hora}=parseDateCSV(dateStr);
         if(!dk)continue;
         const canal=CMAP[canalRaw]||canalRaw;
@@ -2236,10 +2241,11 @@ function handleCSVImport(event){
         if(!newDisparos[dk])newDisparos[dk]=[];
         newDisparos[dk].push(disparo);count++;
       }
-      if(!count){showToast('Nenhum disparo válido no CSV.');return;}
+      if(!count){showToast(`Nenhum disparo para ${expectedBiz||'este produto'} no CSV.`);return;}
       pendingImportData={disparos:newDisparos,campaigns:[],motesCustom:{}};
       const curCount=countDisparos(state.disparos);
-      openConfirm('📊 Importar CSV','Os disparos atuais serão substituídos pelos do CSV.',`Arquivo: <b>${file.name}</b><br>Disparos encontrados: <b>${count}</b><br>Disparos atuais (serão perdidos): <b>${curCount}</b>`,'Importar');
+      const skipNote=skipped?`<br>Linhas de outro produto ignoradas: <b>${skipped}</b>`:'';
+      openConfirm('📊 Importar CSV','Os disparos atuais serão substituídos pelos do CSV.',`Arquivo: <b>${file.name}</b><br>Disparos encontrados (${expectedBiz||'todos'}): <b>${count}</b>${skipNote}<br>Disparos atuais (serão perdidos): <b>${curCount}</b>`,'Importar');
     }catch(err){showToast('Erro ao processar CSV: '+err.message);console.error('CSV import error:',err);}
   };
   reader.onerror=()=>showToast('Erro ao ler o arquivo.');
