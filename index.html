@@ -865,7 +865,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <div class="collab-sep"></div>
   <button class="btn-collab danger" onclick="confirmClear()">🗑 Limpar</button>
   <div class="collab-status" id="collab-status">Aguardando conexão...</div>
-  <span class="app-version-tag">v1.5</span>
+  <span class="app-version-tag">v1.6</span>
 </div>
 
 <div class="comercial-banner" id="comercial-banner">👁 Modo Visualização — Comercial &nbsp;·&nbsp; Você pode comentar nos disparos e solicitar novos na aba Negociação</div>
@@ -1965,6 +1965,13 @@ function openModal(date,index){
     const item=document.createElement('div');
     item.className='check-item'+(sel?' selected':'');
     item.innerHTML=`<div class="check-box">${sel?'✓':''}</div><span class="check-label">${p}</span>`;
+    item.onclick=()=>togglePublico(p,item);
+    pg.appendChild(item);
+  });
+  modalState.selectedPublicos.filter(p=>!publicos.includes(p)).forEach(p=>{
+    const item=document.createElement('div');
+    item.className='check-item selected';
+    item.innerHTML=`<div class="check-box">✓</div><span class="check-label">${p}</span>`;
     item.onclick=()=>togglePublico(p,item);
     pg.appendChild(item);
   });
