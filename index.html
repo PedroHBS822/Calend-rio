@@ -2966,12 +2966,12 @@ function renderOnlineUsers(users){
   const el = document.getElementById('online-users');
   if(!el) return;
   const now = Date.now();
-  const active = users.filter(u => u.ts && (now - new Date(u.ts).getTime()) < 90000);
+  const myUid = _currentUserProfile?.uid;
+  const active = users.filter(u => u.ts && (now - new Date(u.ts).getTime()) < 90000 && u.uid !== myUid);
   if(active.length === 0){ el.innerHTML=''; return; }
   const MAX = 5;
   const visible = active.slice(0, MAX);
   const overflow = active.length - MAX;
-  const myUid = _currentUserProfile?.uid;
   const TAB_LABELS = {monthly:'Mensal',weekly:'Semanal',consolidation:'Consolidação',negociacao:'Negociação'};
   el.innerHTML = visible.map(u => {
     const isMe = u.uid === myUid;
