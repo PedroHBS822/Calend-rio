@@ -308,7 +308,7 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .mote-edit-input{font-size:.62rem;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1.5px solid var(--accent);border-radius:4px;padding:2px 6px;outline:none;width:100%;font-family:inherit;}
 
 /* Disparo cards no grid */
-.dcards{display:flex;flex-direction:column;gap:3px;flex:1;}
+.dcards{display:flex;flex-direction:column;gap:5px;flex:1;}
 .dcard{border-radius:6px;padding:5px 7px;cursor:pointer;transition:transform .12s,box-shadow .12s;border-left:3px solid transparent;}
 .dcard:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12);}
 /* cor por canal — fundo suave + borda esquerda */
@@ -861,7 +861,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <button class="btn-collab" id="btn-import-csv" style="display:none" onclick="document.getElementById('csv-input').click()">📊 Importar CSV</button>
   <input type="file" id="csv-input" style="display:none" accept=".csv,text/csv" onchange="handleCSVImport(event)">
   <div class="collab-status" id="collab-status">Aguardando conexão...</div>
-  <span class="app-version-tag">v1.8</span>
+  <span class="app-version-tag">v1.9</span>
 </div>
 
 <div class="comercial-banner" id="comercial-banner">👁 Modo Visualização — Comercial &nbsp;·&nbsp; Você pode comentar nos disparos e solicitar novos na aba Negociação</div>
@@ -1480,12 +1480,17 @@ function renderMonthGrid(){
     disparos.forEach((dp,idx)=>{
       const card=document.createElement('div');
       const canalKey=dp.canal.replace(/[^a-zA-Z]/g,'');
-      card.className=`dcard canal-${canalKey}${dp.briefingAberto?' briefing-aberto':''}${dp.disparoFeito?' disparo-feito':''}`;
-      card.onclick=(e)=>{e.stopPropagation();openModal(key,idx);};
+      const simplified=isSimplifiedProduct();
+      const dgafi=isDGAfi();
+      card.className=`wcard canal-${canalKey}${dp.briefingAberto?' briefing-aberto':''}${dp.disparoFeito?' disparo-feito':''}`;
+      card.setAttribute('draggable','true');
+      card.dataset.srcDate=key;
+      card.dataset.srcIdx=idx;
+      card.onclick=(e)=>{
+        if(IS_COMERCIAL){openCommentModal(key,idx);return;}
+        if(!e.target.classList.contains('wcard-del')&&!e.target.classList.contains('wcard-briefing-btn')&&!e.target.classList.contains('wcard-feito-btn')&&!e.target.classList.contains('wcard-comment-btn'))openModal(key,idx);
+      };
       if(!IS_COMERCIAL){
-        card.setAttribute('draggable','true');
-        card.dataset.srcDate=key;
-        card.dataset.srcIdx=idx;
         card.addEventListener('dragstart',onDragStart);
         card.addEventListener('dragend',onDragEnd);
         card.addEventListener('dragover',(e)=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
@@ -1495,29 +1500,39 @@ function renderMonthGrid(){
           document.querySelectorAll('.mcell').forEach(c=>c.classList.remove('drag-over'));
           if(!dragSrc.date||dragSrc.date===key)return;
           const src=state.disparos[dragSrc.date]||[];
-          const dp=src[dragSrc.idx];
-          if(!dp)return;
+          const dragged=src[dragSrc.idx];
+          if(!dragged)return;
           src.splice(dragSrc.idx,1);
           if(!src.length)delete state.disparos[dragSrc.date];
           else state.disparos[dragSrc.date]=src;
           if(!state.disparos[key])state.disparos[key]=[];
-          state.disparos[key].push(dp);
+          state.disparos[key].push(dragged);
           dragSrc={date:null,idx:null};
           renderMonthGrid();
           showToast('Disparo movido!');
           fbSave();
         });
       }
-      const nome=dp.produto||dp.temaLivre||'—';
-      const prodObj=dp.produtoId?CATALOGO.find(x=>x.id===dp.produtoId):null;
-      const cat=prodObj?prodObj.categoria:(dp.temaLivre?'Tema Livre':dp.canal);
-      const catClass=`dcard-cat-${canalKey.toLowerCase()}`;
+      const pub=simplified?(dp.perfilBase||''):(Array.isArray(dp.publico)?dp.publico:[dp.publico]).filter(Boolean).join(', ');
+      const nome=simplified?(dp.nomeAcao||'—'):(dp.produto||dp.temaLivre||'—');
+      const commentKey=key+'|'+idx;
+      const commentCount=(state.comentarios[commentKey]||[]).length;
       card.innerHTML=`
-        <div class="dcard-cat ${catClass}"><span class="dcard-canal-dot" style="background:${CANAL_COLORS[dp.canal]||'#999'}"></span>${cat}</div>
-        <div class="dcard-nome">${nome}</div>
-        ${dp.mecanica?`<div class="dcard-mecanica">${dp.mecanica}</div>`:''}
-        ${dp.hora?`<div class="dcard-hora">🕐 ${dp.hora}</div>`:''}
-        ${dp.ticket?`<div class="dcard-ticket ${dp.ticket==='High Ticket'?'high':'low'}">${dp.ticket==='High Ticket'?'▲ High':'▼ Low'}</div>`:dp.perfilBase?`<div class="dcard-biz">${dp.perfilBase}</div>`:''}
+        ${dp.hora?`<div class="wcard-hora">🕐 ${dp.hora}</div>`:''}
+        <div class="wcard-canal">${CANAL_ICONS[dp.canal]||''} ${dp.canal}</div>
+        <div class="wcard-produto">${nome}</div>
+        ${!simplified&&dp.mecanica?`<div class="wcard-mecanica">${dp.mecanica}</div>`:''}
+        ${pub?`<div class="wcard-publico">${pub}</div>`:''}
+        ${dp.obs?`<div class="wcard-obs-text">📝 ${dp.obs}</div>`:''}
+        <button class="wcard-comment-btn${commentCount>0?' has-comments':''}" onclick="openCommentModal('${key}',${idx})" title="Comentários">💬${commentCount>0?` ${commentCount}`:''}</button>
+        <button class="wcard-del" onclick="deleteDisparo('${key}',${idx})">✕</button>
+        <div class="wcard-footer">
+          ${simplified?'<span></span>':dgafi?`<span class="wcard-business">${dp.perfilBase||''}</span>`:`<span class="wcard-ticket ${dp.ticket==='High Ticket'?'high':'low'}">${dp.ticket==='High Ticket'?'▲ High':'▼ Low'}</span>`}
+          <div style="display:flex;align-items:center;gap:3px">
+            <button class="wcard-feito-btn${dp.disparoFeito?' feito-on':''}" onclick="toggleDisparoFeito('${key}',${idx})" title="${dp.disparoFeito?'Disparo feito — clique para desmarcar':'Marcar disparo como feito'}">✓</button>
+            <button class="wcard-briefing-btn${dp.briefingAberto?' briefing-on':''}" onclick="toggleBriefing('${key}',${idx})" title="${dp.briefingAberto?'Briefing aberto — clique para desmarcar':'Marcar briefing como aberto'}">${dp.briefingAberto?'📬':'📭'}</button>
+          </div>
+        </div>
       `;
       dcardsEl.appendChild(card);
     });
