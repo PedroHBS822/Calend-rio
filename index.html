@@ -401,6 +401,12 @@ body.dark .campo-input,.dark .field-input,.dark .tema-livre-input{color:var(--te
 .wcard.briefing-aberto.canal-WhatsApp{background:rgba(26,173,82,.24);}
 .wcard.briefing-aberto.canal-InApp   {background:rgba(230,138,0,.24);}
 .wcard.briefing-aberto.canal-DM      {background:rgba(0,136,204,.24);}
+.dcard.briefing-aberto.canal-Push    {background:rgba(108,99,255,.22)!important;}
+.dcard.briefing-aberto.canal-Email   {background:rgba(0,166,126,.22)!important;}
+.dcard.briefing-aberto.canal-WhatsApp{background:rgba(26,173,82,.22)!important;}
+.dcard.briefing-aberto.canal-InApp   {background:rgba(230,138,0,.22)!important;}
+.dcard.briefing-aberto.canal-DM      {background:rgba(0,136,204,.22)!important;}
+.dcard.disparo-feito{background:rgba(33,194,94,.2)!important;border-left-color:#21C25E!important;}
 .wbtn-add{margin-top:auto;padding:7px;background:transparent;border:1.5px dashed var(--border);border-radius:8px;color:var(--text-light);cursor:pointer;font-size:.75rem;font-weight:600;width:100%;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px;}
 .wbtn-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
 
@@ -855,7 +861,7 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
   <button class="btn-collab" id="btn-import-csv" style="display:none" onclick="document.getElementById('csv-input').click()">📊 Importar CSV</button>
   <input type="file" id="csv-input" style="display:none" accept=".csv,text/csv" onchange="handleCSVImport(event)">
   <div class="collab-status" id="collab-status">Aguardando conexão...</div>
-  <span class="app-version-tag">v1.7</span>
+  <span class="app-version-tag">v1.8</span>
 </div>
 
 <div class="comercial-banner" id="comercial-banner">👁 Modo Visualização — Comercial &nbsp;·&nbsp; Você pode comentar nos disparos e solicitar novos na aba Negociação</div>
@@ -1471,11 +1477,10 @@ function renderMonthGrid(){
     const dcardsEl=document.createElement('div');
     dcardsEl.className='dcards';
 
-    const MAX=3;
-    disparos.slice(0,MAX).forEach((dp,idx)=>{
+    disparos.forEach((dp,idx)=>{
       const card=document.createElement('div');
       const canalKey=dp.canal.replace(/[^a-zA-Z]/g,'');
-      card.className=`dcard canal-${canalKey}`;
+      card.className=`dcard canal-${canalKey}${dp.briefingAberto?' briefing-aberto':''}${dp.disparoFeito?' disparo-feito':''}`;
       card.onclick=(e)=>{e.stopPropagation();openModal(key,idx);};
       if(!IS_COMERCIAL){
         card.setAttribute('draggable','true');
@@ -1516,11 +1521,6 @@ function renderMonthGrid(){
       `;
       dcardsEl.appendChild(card);
     });
-    if(disparos.length>MAX){
-      const more=document.createElement('div');
-      more.className='dmore';more.textContent=`+${disparos.length-MAX} mais`;
-      dcardsEl.appendChild(more);
-    }
     cell.appendChild(dcardsEl);
 
     // Add btn
@@ -1973,6 +1973,7 @@ function toggleDisparoFeito(date,idx){
   if(!state.disparos[date]?.[idx])return;
   state.disparos[date][idx].disparoFeito=!state.disparos[date][idx].disparoFeito;
   renderWeekCards(date);
+  if(document.getElementById('page-monthly').classList.contains('active'))renderMonthGrid();
   fbSave();
 }
 
@@ -1980,6 +1981,7 @@ function toggleBriefing(date,idx){
   if(!state.disparos[date]?.[idx])return;
   state.disparos[date][idx].briefingAberto=!state.disparos[date][idx].briefingAberto;
   renderWeekCards(date);
+  if(document.getElementById('page-monthly').classList.contains('active'))renderMonthGrid();
   fbSave();
 }
 
