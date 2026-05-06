@@ -855,13 +855,13 @@ body.comment-highlight-mode .wcard.comment-highlight{pointer-events:all;}
     <span id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0;transition:background .3s"></span>
     <span id="sync-label">Conectando...</span>
   </div>
-  <div class="collab-sep"></div>
-  <button class="btn-collab danger" onclick="confirmClear()">🗑 Limpar</button>
+  <div class="collab-sep" id="restore-sep" style="display:none"></div>
+  <button class="btn-collab" id="btn-restore-bkp" style="display:none" onclick="restoreBackup()">♻️ Backup</button>
   <div class="collab-sep" id="csv-sep" style="display:none"></div>
   <button class="btn-collab" id="btn-import-csv" style="display:none" onclick="document.getElementById('csv-input').click()">📊 Importar CSV</button>
   <input type="file" id="csv-input" style="display:none" accept=".csv,text/csv" onchange="handleCSVImport(event)">
   <div class="collab-status" id="collab-status">Aguardando conexão...</div>
-  <span class="app-version-tag">v1.9</span>
+  <span class="app-version-tag">v2.0</span>
 </div>
 
 <div class="comercial-banner" id="comercial-banner">👁 Modo Visualização — Comercial &nbsp;·&nbsp; Você pode comentar nos disparos e solicitar novos na aba Negociação</div>
@@ -2213,6 +2213,28 @@ function confirmOK(){
 }
 document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
 
+function getBackup(){try{const r=localStorage.getItem('_bkp_'+currentProduct);return r?JSON.parse(r):null;}catch(_){return null;}}
+function updateRestoreButton(){
+  const bkp=getBackup();
+  const btn=document.getElementById('btn-restore-bkp');
+  const sep=document.getElementById('restore-sep');
+  if(!btn)return;
+  if(bkp){
+    const d=new Date(bkp.ts);
+    btn.textContent='♻️ '+d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    btn.style.display='';sep.style.display='';
+  }else{btn.style.display='none';sep.style.display='none';}
+}
+function restoreBackup(){
+  const bkp=getBackup();
+  if(!bkp){showToast('Nenhum backup encontrado.');return;}
+  const count=countDisparos(bkp.disparos);
+  const d=new Date(bkp.ts);
+  const dateStr=d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  pendingImportData={disparos:bkp.disparos,campaigns:state.campaigns,motesCustom:state.motesCustom};
+  openConfirm('♻️ Restaurar Backup',`Backup de ${dateStr}`,`${count} disparo(s) serão restaurados. Os dados atuais serão substituídos.`,'Restaurar');
+}
+
 // ════ TOAST ════
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
@@ -2307,6 +2329,7 @@ function reloadProduct(isInit=true){
       if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();
       if(document.getElementById('page-negociacao').classList.contains('active'))buildNegociacaoPage();
       updateCommentAlert();
+      updateRestoreButton();
       setSyncStatus('live');
       return;
     }
@@ -2397,6 +2420,7 @@ function fbSave() {
   clearTimeout(_fbSaveTimer);
   _fbSaveTimer = setTimeout(async () => {
     setSyncStatus('saving');
+    try{localStorage.setItem('_bkp_'+currentProduct,JSON.stringify({ts:Date.now(),disparos:state.disparos}));updateRestoreButton();}catch(_){}
     await window._fb.save(state);
     setSyncStatus('ok');
   }, 600);
