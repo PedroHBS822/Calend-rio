@@ -2213,7 +2213,7 @@ function confirmOK(){
 }
 document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
 
-function getBackup(){try{const r=localStorage.getItem('_bkp_'+currentProduct);return r?JSON.parse(r):null;}catch(_){return null;}}
+function getBackup(){try{const r=localStorage.getItem('_bkp_prev_'+currentProduct);return r?JSON.parse(r):null;}catch(_){return null;}}
 function updateRestoreButton(){
   const bkp=getBackup();
   const btn=document.getElementById('btn-restore-bkp');
@@ -2329,6 +2329,7 @@ function reloadProduct(isInit=true){
       if(document.getElementById('page-weekly').classList.contains('active'))buildWeekCalendar();
       if(document.getElementById('page-negociacao').classList.contains('active'))buildNegociacaoPage();
       updateCommentAlert();
+      try{localStorage.setItem('_bkp_curr_'+currentProduct,JSON.stringify({ts:Date.now(),disparos:state.disparos}));}catch(_){}
       updateRestoreButton();
       setSyncStatus('live');
       return;
@@ -2420,7 +2421,7 @@ function fbSave() {
   clearTimeout(_fbSaveTimer);
   _fbSaveTimer = setTimeout(async () => {
     setSyncStatus('saving');
-    try{localStorage.setItem('_bkp_'+currentProduct,JSON.stringify({ts:Date.now(),disparos:state.disparos}));updateRestoreButton();}catch(_){}
+    try{const prev=localStorage.getItem('_bkp_curr_'+currentProduct);if(prev)localStorage.setItem('_bkp_prev_'+currentProduct,prev);localStorage.setItem('_bkp_curr_'+currentProduct,JSON.stringify({ts:Date.now(),disparos:state.disparos}));updateRestoreButton();}catch(_){}
     await window._fb.save(state);
     setSyncStatus('ok');
   }, 600);
