@@ -2268,6 +2268,7 @@ function updateCSVButton(){
 }
 async function switchProduct(id){
   if(id===currentProduct){document.getElementById('product-menu').classList.remove('open');return;}
+  clearTimeout(_fbSaveTimer);
   currentProduct=id;
   updateCSVButton();
   const product=PRODUCTS.find(p=>p.id===id);
